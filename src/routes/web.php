@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\LoginController;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,3 +25,5 @@ Route::get('/items', function () {
 Route::get('/profile/setup', function () {
     return view('profile.setup');
 })->name('profile.setup');
+
+Route::post('/login', [LoginController::class, 'login'])->name('login');
