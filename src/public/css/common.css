@@ -64,6 +64,10 @@
     font-size: 1rem;
 }
 
+.logout-button__submit:hover {
+    color: #ccc;
+}
+
 .header__right a {
     color: #fff;
     text-decoration: none;

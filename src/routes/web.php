@@ -2,6 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ItemController;
+use GuzzleHttp\Middleware;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,16 +17,18 @@ use App\Http\Controllers\Auth\LoginController;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
-
-Route::get('/items', function () {
-    return view('items.index');
-})->name('items.index');
-
-Route::get('/profile/setup', function () {
-    return view('profile.setup');
-})->name('profile.setup');
-
 Route::post('/login', [LoginController::class, 'login'])->name('login');
+
+Route::get('/mypage',function () {
+    return view('mypage.index');
+})->name('mypage');
+Route::get('/mypage/profile', [ProfileController::class, 'edit'])->name('mypage.profile');
+Route::patch('/mypage/profile', [ProfileController::class, 'update'])->name('profile.update')->middleware('auth');
+
+Route::get('/', [ItemController::class, 'index'])->name('items.index');
+
+
+
+Route::get('items/sell', [ItemController::class, 'create'])->middleware('auth')->name('items.create');
+
+Route::post('/items', [ItemController::class, 'store'])->middleware('auth')->name('items.store');

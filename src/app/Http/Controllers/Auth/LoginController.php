@@ -16,11 +16,11 @@ class LoginController extends Controller
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
 
-            return redirect()->intended('/items'); // 商品一覧ページへ遷移
+            return redirect()->intended('/'); // 商品一覧ページへ遷移
         }
 
         throw ValidationException::withMessages([
-            'email' => ['メールアドレスまたはパスワードが正しくありません。'],
+            'email' => ['ログイン情報が登録されていません'],
         ]);
     }
 }

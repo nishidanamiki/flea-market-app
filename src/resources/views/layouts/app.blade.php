@@ -33,10 +33,15 @@
                             <button class="logout-button__submit" type="submit">ログアウト</button>
                         </form>
                         <a href="{{ route('mypage') }}">マイページ</a>
-                        <a href="{{ route('sell') }}" class="sell-button">出品</a>
+                        <a href="{{ route('items.create') }}" class="sell-button">出品</a>
                     </nav>
                 </div>
             @endauth
+            @guest
+                <a href="/login">ログイン</a>
+                <a href="/login">マイページ</a>
+                <a href="/login">出品</a>
+            @endguest
         </div>
     </header>
     <main>
