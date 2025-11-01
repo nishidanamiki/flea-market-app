@@ -14,6 +14,7 @@
                 <div class="image-upload-box">
                     <input type="file" name="img_url" id="img_url" class="file-input" required>
                     <label for="img_url" class="upload-label">画像を選択する</label>
+                    <div id="itempreview" class="image-preview"></div>
                 </div>
                 <div class="form__error">
                     @error('img_url')
@@ -33,7 +34,7 @@
                     @endforeach
                 </div>
                 <div class="form__error">
-                    @error('category')
+                    @error('categories')
                         {{ $message }}
                     @enderror
                 </div>
@@ -93,4 +94,23 @@
             <button class="form-button">出品する</button>
         </form>
     </div>
+@endsection
+
+@section('script')
+    <script>
+        document.getElementById('img_url')?.addEventListener('change', (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            const preview = document.getElementById('itempreview');
+            const uploadLabel = document.querySelector('.upload-label');
+            const url = URL.createObjectURL(file);
+            preview.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = 'preview';
+            img.classList.add('preview-image');
+            preview.appendChild(img);
+            uploadLabel.style.display = 'none';
+        });
+    </script>
 @endsection

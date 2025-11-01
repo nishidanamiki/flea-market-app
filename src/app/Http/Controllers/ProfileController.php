@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\ProfileRequest;
-use Illuminate\Http\Request;
+use App\Models\Address;
 
 class ProfileController extends Controller
 {
@@ -17,16 +17,13 @@ class ProfileController extends Controller
 
     public function edit()
     {
-        $user = auth()->user();
-        if (!$user) {
-            return redirect()->route('login');
-        }
+        $user = Auth::user();
         return view('mypage.profile', compact('user'));
     }
 
     public function update(ProfileRequest $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         if ($request->hasFile('profile_image')) {
             $image = $request->file('profile_image');
@@ -37,7 +34,7 @@ class ProfileController extends Controller
         $user->name = $request->input('name');
         $user->save();
 
-        $user->address()->updateOrCreate(
+        $user->addresses()->updateOrCreate(
             ['user_id' => $user->id],
             [
                 'postal_code' => $request->input('postal_code'),

@@ -5,15 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Address extends Model
+class Purchase extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'user_id',
-        'postal_code',
-        'address',
-        'building',
+        'ite_id',
+        'address_id',
+        'payment_method',
+        'status',
     ];
 
     public function user()
@@ -21,8 +22,13 @@ class Address extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function purchases()
+    public function item()
     {
-        return $this->hasMany(purchase::class);
+        return $this->belongsTo(Item::class);
+    }
+
+    public function address()
+    {
+        return $this->belongsTo(Address::class);
     }
 }

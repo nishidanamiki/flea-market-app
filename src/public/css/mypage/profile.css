@@ -12,15 +12,16 @@
 }
 
 .profile-image,
-.profile-image placeholder {
+.profile-image.placeholder {
     width: 100px;
     height: 100px;
     border-radius: 50%;
     object-fit: cover;
     background-color: #d9d9d9;
+    flex-shrink: 0;
 }
 
-#profile_image {
+.hidden-file-input {
     display: none;
 }
 
@@ -69,4 +70,9 @@ input {
     color: #fff;
     font-weight: bold;
     cursor: pointer;
+}
+
+.form__error {
+    text-align: left;
+    color: #ff5555;
 }

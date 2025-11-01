@@ -1,6 +1,9 @@
+html {
+    scroll-behavior: smooth;
+}
+
 .header {
     width: 100%;
-    /* padding: 1rem 2rem; */
     background-color: #000;
 }
 
@@ -12,10 +15,6 @@
     align-items: center;
     justify-content: space-between;
     box-sizing: border-box;
-}
-
-.header__left {
-    flex: 1;
 }
 
 .header__center {

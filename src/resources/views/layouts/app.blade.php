@@ -8,6 +8,7 @@
     <title>COACHTECHフリマ</title>
     <link rel="stylesheet" href="{{ asset('css/sanitize.css') }}">
     <link rel="stylesheet" href="{{ asset('css/common.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     @yield('css')
 </head>
 
@@ -20,32 +21,45 @@
                 </a>
             </div>
 
-            @auth
-                <div class="header__center">
-                    <form class="search-form" method="get">
-                        <input class="search" type="text" name="search" id="search" placeholder="なにをお探しですか？">
-                    </form>
-                </div>
-                <div class="header__right">
-                    <nav>
-                        <form action="{{ route('logout') }}" method="post">
-                            @csrf
-                            <button class="logout-button__submit" type="submit">ログアウト</button>
+            @if (!Request::is('login') && !Request::is('register'))
+                @auth
+                    <div class="header__center">
+                        <form action="{{ route('items.index') }}" class="search-form" method="get">
+                            <input class="search" type="text" name="keyword" placeholder="なにをお探しですか？"
+                                value="{{ request('keyword') }}">
                         </form>
-                        <a href="{{ route('mypage') }}">マイページ</a>
-                        <a href="{{ route('items.create') }}" class="sell-button">出品</a>
-                    </nav>
-                </div>
-            @endauth
-            @guest
-                <a href="/login">ログイン</a>
-                <a href="/login">マイページ</a>
-                <a href="/login">出品</a>
-            @endguest
+                    </div>
+                    <div class="header__right">
+                        <nav>
+                            <form action="{{ route('logout') }}" method="post">
+                                @csrf
+                                <button class="logout-button__submit" type="submit">ログアウト</button>
+                            </form>
+                            <a href="{{ route('mypage') }}">マイページ</a>
+                            <a href="{{ route('items.create') }}" class="sell-button">出品</a>
+                        </nav>
+                    </div>
+                @endauth
+                @guest
+                    <div class="header__center">
+                        <form action="{{ route('items.index') }}" class="search-form" method="get">
+                            <input class="search" type="text" name="keyword" placeholder="なにをお探しですか？">
+                        </form>
+                    </div>
+                    <div class="header__right">
+                        <nav>
+                            <a href="{{ route('login') }}">ログイン</a>
+                            <a href="{{ route('login') }}">マイページ</a>
+                            <a href="{{ route('login') }}" class="sell-button">出品</a>
+                        </nav>
+                    </div>
+                @endguest
+            @endif
         </div>
     </header>
     <main>
         @yield('content')
+        @yield('script')
     </main>
 </body>
 

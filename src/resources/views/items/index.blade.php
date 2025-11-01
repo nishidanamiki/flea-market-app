@@ -1,5 +1,9 @@
 @extends('layouts.app')
 
+@php
+    use Illuminate\Support\Str;
+@endphp
+
 @section('css')
     <link rel="stylesheet" href="{{ asset('css/items/index.css') }}">
 @endsection
@@ -7,18 +11,32 @@
 @section('content')
     <div class="item-list-container">
         <div class="tab-menu">
-            <a href="#" class="tab-group__item">おすすめ</a>
-            <a href="#" class="tab-group__item">マイリスト</a>
+            <a href="{{ url('/') }}" class="tab {{ $tab === 'recommend' ? 'active' : '' }}">おすすめ</a>
+            <a href="{{ route('items.index', ['tab' => 'mylist']) }}"
+                class="tab {{ $tab === 'mylist' ? 'active' : '' }}">マイリスト</a>
         </div>
 
-        {{-- <div class="item-list">
-            @foreach ($items as $item)
-                <div class="item-card">
-                    <div class="item-card__img">
-                        @if ($items->image)
-                            <img src="{{ asset('storage/' . $item->image) }}" alt="{{ $item->name }}">
+        @if ($tab === 'mylist' && !auth()->check())
+        @else
+            <div class="item-list">
+                @foreach ($items as $item)
+                    <div class="item-card">
+                        <a href="{{ route('items.show', ['item_id' => $item->id]) }}">
+                            <div class="item-image">
+                                <img src="{{ Str::startsWith($item->img_url, ['http://', 'https://']) ? $item->img_url : asset('storage/' . $item->img_url) }}"
+                                    alt="{{ $item->name }}">
+
+                                @if ($item->purchases()->exists())
+                                    <span class="sold-label">SOLD</span>
+                                @endif
+                            </div>
+                            <div class="item-info">
+                                <p class="item-name">{{ $item->name }}</p>
+                            </div>
+                        </a>
                     </div>
-                </div>
-        </div> --}}
+                @endforeach
+            </div>
+        @endif
     </div>
 @endsection
