@@ -29,9 +29,7 @@ class ItemController extends Controller
         }
 
         if ($keyword) {
-            $query->where(function ($q) use ($keyword) {
-                $q->where('name', 'like', "%{$keyword}%");
-            });
+            $query->where('name', 'like', "%{$keyword}%");
         }
 
         $items = $query->get();
@@ -63,9 +61,9 @@ class ItemController extends Controller
 
     public function show($id)
     {
-        $item = Item::with(['user', 'categories', 'comments.user'])->findOrFail($id);
+        $item = Item::with(['user', 'categories', 'comments.user', 'likes'])->findOrFail($id);
         $liked = auth()->check()
-            ? $item->likedUsers()->where('user_id', auth()->id())->exists()
+            ? $item->likes()->where('user_id', auth()->id())->exists()
             : false;
         return view('items.show', compact('item', 'liked'));
     }

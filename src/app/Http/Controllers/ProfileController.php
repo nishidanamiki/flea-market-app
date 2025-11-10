@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\ProfileRequest;
@@ -9,10 +10,20 @@ use App\Models\Address;
 
 class ProfileController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $user = auth()->user();
-        return view('mypage.profile', compact('user'));
+        $user = Auth::user();
+        $page = $request->query('page', 'sell');
+
+        if ($page === 'sell') {
+            $items = $user->items()->latest()->get();
+        } elseif ($page === 'buy') {
+            $items = $user->purchases()->with('user')->latest()->get();
+        } else {
+            $items = collect();
+        }
+
+        return view('mypage.index', compact('user', 'items', 'page'));
     }
 
     public function edit()

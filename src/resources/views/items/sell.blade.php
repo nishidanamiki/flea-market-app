@@ -17,9 +17,11 @@
                     <div id="itempreview" class="image-preview"></div>
                 </div>
                 <div class="form__error">
-                    @error('img_url')
-                        {{ $message }}
-                    @enderror
+                    @if ($errors->has('img_url'))
+                        {{ $errors->first('img_url') }}
+                    @elseif ($errors->any() && !old('img_url'))
+                        <p class="reupload-notice">※再度画像を選択してください</p>
+                    @endif
                 </div>
             </div>
             <h2 class="sub-title">商品の詳細</h2>
@@ -28,7 +30,8 @@
                 <div class="category-tags">
                     @foreach ($categories as $category)
                         <label class="category-label">
-                            <input type="checkbox" name="categories[]" value="{{ $category->id }}">
+                            <input type="checkbox" name="categories[]" value="{{ $category->id }}"
+                                {{ in_array($category->id, old('categories', [])) ? 'checked' : '' }}>
                             <span>{{ $category->name }}</span>
                         </label>
                     @endforeach
@@ -43,11 +46,12 @@
                 <label for="condition" class="form-label">商品の状態</label>
                 <div class="select-wrap">
                     <select name="condition" id="condition" required>
-                        <option value="">選択してください</option>
-                        <option value="良好">良好</option>
-                        <option value="目立った傷や汚れなし">目立った傷や汚れなし</option>
-                        <option value="やや傷や汚れあり">やや傷や汚れあり</option>
-                        <option value="状態が悪い">状態が悪い</option>
+                        <option value="" disabled selected hidden>選択してください</option>
+                        <option value="良好" {{ old('condition') == '良好' ? 'selected' : '' }}>良好</option>
+                        <option value="目立った傷や汚れなし" {{ old('condition') == '目立った傷や汚れなし' ? 'selected' : '' }}>目立った傷や汚れなし
+                        </option>
+                        <option value="やや傷や汚れあり" {{ old('condition') == 'やや傷や汚れあり' ? 'selected' : '' }}>やや傷や汚れあり</option>
+                        <option value="状態が悪い" {{ old('condition') == '状態が悪い' ? 'selected' : '' }}>状態が悪い</option>
                     </select>
                 </div>
                 <div class="form__error">
@@ -59,7 +63,7 @@
             <h2 class="sub-title">商品名と説明</h2>
             <div class="form-group">
                 <label for="name" class="form-label">商品名</label>
-                <input type="text" name="name" id="name" required>
+                <input type="text" name="name" id="name" value="{{ old('name') }}" required>
                 <div class="form__error">
                     @error('name')
                         {{ $message }}
@@ -68,11 +72,11 @@
             </div>
             <div class="form-group">
                 <label for="brand" class="form-label">ブランド名</label>
-                <input type="text" name="brand" id="brand">
+                <input type="text" name="brand" id="brand" value="{{ old('brand') }}">
             </div>
             <div class="form-group">
                 <label for="description" class="form-label">商品の説明</label>
-                <textarea name="description" id="description" rows="4" required></textarea>
+                <textarea name="description" id="description" rows="4" required>{{ old('description') }}</textarea>
                 <div class="form__error">
                     @error('description')
                         {{ $message }}
@@ -83,7 +87,7 @@
                 <label for="price" class="form-label">販売価格</label>
                 <div class="price-input">
                     <span class="yen-mark">&yen</span>
-                    <input type="number" name="price" id="price" required>
+                    <input type="number" name="price" id="price" value="{{ old('price') }}" required>
                 </div>
                 <div class="form__error">
                     @error('price')

@@ -2,13 +2,26 @@ html {
     scroll-behavior: smooth;
 }
 
+html,
+body {
+    width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: inherit;
+}
+
 .header {
     width: 100%;
     background-color: #000;
 }
 
 .header__inner {
-    max-width: 1540px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: 0.8rem 1.5rem;
     display: flex;
@@ -40,11 +53,17 @@ html {
 
 .search {
     width: 100%;
+    min-width: 150px;
     padding: 0.2rem 0.5rem;
     border: none;
     border-radius: 3px;
     box-sizing: border-box;
     line-height: 1.6rem;
+}
+
+.search::placeholder {
+    color: #000;
+    opacity: 1;
 }
 
 .header__right nav {

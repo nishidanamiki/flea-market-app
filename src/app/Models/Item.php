@@ -27,13 +27,13 @@ class Item extends Model
         return $this->hasMany(Comment::class);
     }
 
-    public function likedUsers()
+    public function likes()
     {
-        return $this->belongsToMany(User::class, 'likes')->withTimestamps();
+        return $this->hasMany(Like::class);
     }
 
-    public function purchases()
+    public function buyers()
     {
-        return $this->hasMany(Purchase::class);
+        return $this->belongsToMany(User::class, 'purchases')->withPivot(['address_id', 'payment_method', 'status'])->withTimestamps();
     }
 }

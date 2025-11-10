@@ -17,7 +17,7 @@
             <div class="like-section">
                 <div class="icon-wrap">
                     @if (Auth::check())
-                        @if ($item->likedUsers->contains(Auth::user()))
+                        @if ($liked)
                             <form action="{{ route('items.unlike', $item) }}" method="post" class="like-form">
                                 @csrf
                                 @method('DELETE')
@@ -38,7 +38,7 @@
                             <i class="fa-regular fa-star"></i>
                         </a>
                     @endif
-                    <span class="like-count">{{ $item->likedUsers->count() }}</span>
+                    <span class="like-count">{{ $item->likes ? $item->likes->count() : 0 }}</span>
                 </div>
                 <div class="comment-icon">
                     <a href="#comments-section"><i class="fa-regular fa-comment"></i></a>
@@ -74,7 +74,7 @@
                             <p>{{ $comment->comment }}</p>
                         @endforeach
                     </div>
-                    <form action="{{ route('comment.store', $item->id) }}" method="post" novalidate>
+                    <form action="{{ route('comment.store', ['item' => $item->id]) }}" method="post" novalidate>
                         @csrf
                         <div class="comment-input">
                             <label for="comment">商品へのコメント</label>

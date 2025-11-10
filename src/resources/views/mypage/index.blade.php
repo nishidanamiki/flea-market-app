@@ -16,8 +16,22 @@
             </div>
         </div>
         <div class="tab-menu">
-            <a href="#" class="tab active">出品した商品</a>
-            <a href="#" class="tab">購入した商品</a>
+            <a href="{{ route('mypage', ['page' => 'sell']) }}"
+                class="tab {{ $page === 'sell' ? 'active' : '' }}">出品した商品</a>
+            <a href="{{ route('mypage', ['page' => 'buy']) }}" class="tab {{ $page === 'buy' ? 'active' : '' }}">購入した商品</a>
+        </div>
+        <div class="item-list">
+            @foreach ($items as $item)
+                <div class="item-card">
+                    <div class="item-image">
+                        <img src="{{ Str::startsWith($item->img_url, ['http://', 'https://']) ? $item->img_url : asset('storage/' . $item->img_url) }}"
+                            alt="{{ $item->name }}">
+                    </div>
+                    <div class="item-info">
+                        <p class="item-name">{{ $item->name }}</p>
+                    </div>
+                </div>
+            @endforeach
         </div>
     </div>
 @endsection

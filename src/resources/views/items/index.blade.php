@@ -26,7 +26,7 @@
                                 <img src="{{ Str::startsWith($item->img_url, ['http://', 'https://']) ? $item->img_url : asset('storage/' . $item->img_url) }}"
                                     alt="{{ $item->name }}">
 
-                                @if ($item->purchases()->exists())
+                                @if ($item->buyers()->exists())
                                     <span class="sold-label">SOLD</span>
                                 @endif
                             </div>

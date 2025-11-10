@@ -5,11 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -30,7 +28,7 @@ class User extends Authenticatable
 
     public function purchases()
     {
-        return $this->hasMany(Purchase::class,);
+        return $this->belongsToMany(Item::class, 'purchases')->withPivot('address_id', 'payment_method', 'status')->withTimestamps();
     }
 
     public function addresses()
@@ -41,6 +39,11 @@ class User extends Authenticatable
     public function likedItems()
     {
         return $this->belongsToMany(Item::class, 'likes',)->withTimestamps();
+    }
+
+    public function likes()
+    {
+        return $this->hasMany(Like::class);
     }
 
     public function comments()
