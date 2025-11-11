@@ -4,9 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\ProfileRequest;
-use App\Models\Address;
 
 class ProfileController extends Controller
 {
@@ -18,7 +16,7 @@ class ProfileController extends Controller
         if ($page === 'sell') {
             $items = $user->items()->latest()->get();
         } elseif ($page === 'buy') {
-            $items = $user->purchases()->with('user')->latest()->get();
+            $items = $user->purchases()->with('item')->latest()->get();
         } else {
             $items = collect();
         }

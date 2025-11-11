@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', '会員登録 - COACHTECHフリマ')
+
 @section('css')
     <link rel="stylesheet" href="{{ asset('css/auth/register.css') }}">
 @endsection

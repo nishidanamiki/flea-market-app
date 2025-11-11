@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'マイページ - COACHTECHフリマ')
+
 @section('css')
     <link rel="stylesheet" href="{{ asset('css/mypage/index.css') }}">
 @endsection
@@ -22,15 +24,22 @@
         </div>
         <div class="item-list">
             @foreach ($items as $item)
-                <div class="item-card">
-                    <div class="item-image">
-                        <img src="{{ Str::startsWith($item->img_url, ['http://', 'https://']) ? $item->img_url : asset('storage/' . $item->img_url) }}"
-                            alt="{{ $item->name }}">
+                @if ($page === 'buy')
+                    @php
+                        $item = $item->item;
+                    @endphp
+                @endif
+                @if ($item)
+                    <div class="item-card">
+                        <div class="item-image">
+                            <img src="{{ \Illuminate\Support\Str::startsWith($item->img_url, ['http://', 'https://']) ? $item->img_url : asset('storage/' . $item->img_url) }}"
+                                alt="{{ $item->name }}">
+                        </div>
+                        <div class="item-info">
+                            <p class="item-name">{{ $item->name }}</p>
+                        </div>
                     </div>
-                    <div class="item-info">
-                        <p class="item-name">{{ $item->name }}</p>
-                    </div>
-                </div>
+                @endif
             @endforeach
         </div>
     </div>

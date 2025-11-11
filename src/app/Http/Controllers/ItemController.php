@@ -51,7 +51,7 @@ class ItemController extends Controller
             $validated['img_url'] = $path;
         }
 
-        $validated['user_id'] = auth() ->id();
+        $validated['user_id'] = auth()->id();
         $item = Item::create($validated);
         if ($request->filled('categories')) {
             $item->categories()->attach($request->input('categories'));

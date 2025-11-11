@@ -7,7 +7,6 @@ use App\Http\Controllers\ItemController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\CommentController;
-use GuzzleHttp\Middleware;
 
 /*
 |--------------------------------------------------------------------------

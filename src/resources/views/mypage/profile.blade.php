@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'プロフィール編集 - COACHTECHフリマ')
+
 @section('css')
     <link rel="stylesheet" href="{{ asset('css/mypage/profile.css') }}">
 @endsection

@@ -4,6 +4,8 @@
     use Illuminate\Support\Str;
 @endphp
 
+@section('title', '商品一覧 - COACHTECHフリマ')
+
 @section('css')
     <link rel="stylesheet" href="{{ asset('css/items/index.css') }}">
 @endsection
@@ -23,10 +25,12 @@
                     <div class="item-card">
                         <a href="{{ route('items.show', ['item_id' => $item->id]) }}">
                             <div class="item-image">
-                                <img src="{{ Str::startsWith($item->img_url, ['http://', 'https://']) ? $item->img_url : asset('storage/' . $item->img_url) }}"
+                                <img src="{{ Str::startsWith($item->img_url, ['http://', 'https://'])
+                                    ? $item->img_url
+                                    : asset('storage/' . $item->img_url) }}"
                                     alt="{{ $item->name }}">
 
-                                @if ($item->buyers()->exists())
+                                @if ($item->is_sold)
                                     <span class="sold-label">SOLD</span>
                                 @endif
                             </div>

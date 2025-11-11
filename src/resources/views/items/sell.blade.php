@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', '商品の出品 - COACHTECHフリマ')
+
 @section('css')
     <link rel="stylesheet" href="{{ asset('css/items/sell.css') }}">
 @endsection

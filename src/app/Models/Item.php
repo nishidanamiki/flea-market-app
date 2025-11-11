@@ -10,11 +10,21 @@ class Item extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 'name', 'price', 'brand', 'description', 'img_url', 'condition'
+        'user_id', 'name', 'price', 'brand', 'description', 'img_url', 'condition', 'is_sold'
     ];
+
+    protected $casts = [
+        'is_sold' => 'boolean',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function purchase()
+    {
+        return $this->hasOne(Purchase::class, 'item_id', 'id');
     }
 
     public function categories()
@@ -30,10 +40,5 @@ class Item extends Model
     public function likes()
     {
         return $this->hasMany(Like::class);
-    }
-
-    public function buyers()
-    {
-        return $this->belongsToMany(User::class, 'purchases')->withPivot(['address_id', 'payment_method', 'status'])->withTimestamps();
     }
 }

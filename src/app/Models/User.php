@@ -28,7 +28,7 @@ class User extends Authenticatable
 
     public function purchases()
     {
-        return $this->belongsToMany(Item::class, 'purchases')->withPivot('address_id', 'payment_method', 'status')->withTimestamps();
+        return $this->hasMany(Purchase::class);
     }
 
     public function addresses()
@@ -38,7 +38,7 @@ class User extends Authenticatable
 
     public function likedItems()
     {
-        return $this->belongsToMany(Item::class, 'likes',)->withTimestamps();
+        return $this->belongsToMany(Item::class, 'likes', 'user_id', 'item_id')->withTimestamps();
     }
 
     public function likes()
