@@ -16,7 +16,16 @@
     height: 120px;
     border-radius: 50%;
     object-fit: cover;
+}
+
+.profile-placeholder {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
     background-color: #d9d9d9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .mypage-info {

@@ -17,7 +17,7 @@
         <div class="header__inner">
             <div class="header__left">
                 <a href="{{ url('/') }}">
-                    <img src="{{ asset('images/logo.svg') }}" alt="サイトロゴ">
+                    <img src="{{ asset('images/logo.svg') }}" alt="COACHTECHフリマのロゴ">
                 </a>
             </div>
 
@@ -43,6 +43,7 @@
                 @guest
                     <div class="header__center">
                         <form action="{{ route('items.index') }}" class="search-form" method="get">
+                            <label for="search" class="visually-hidden">商品検索</label>
                             <input class="search" type="text" name="keyword" placeholder="なにをお探しですか？">
                         </form>
                     </div>

@@ -8,9 +8,9 @@
 
 @section('content')
     <div class="purchase-container">
+        <h1 class="visually-hidden">購入内容の確認</h1>
         <form action="{{ route('purchase.store', ['item_id' => $item->id]) }}" class="purchase-form" method="POST" novalidate>
             @csrf
-            <h1 class="visually-hidden">購入内容の確認</h1>
             <div class="purchase-flex">
                 <div class="purchase-left">
                     <section class="item-info">
@@ -27,6 +27,7 @@
                     </section>
                     <section class="payment-method">
                         <h2>支払い方法</h2>
+                        <label for="payment" class="visually-hidden">支払い方法を選択してください</label>
                         <select name="payment" id="payment" required>
                             <option value="" disabled selected hidden>選択してください</option>
                             <option value="convenience" {{ old('payment') == 'convenience' ? 'selected' : '' }}>コンビニ払い
@@ -50,7 +51,7 @@
                                 <p class="address">{{ $address->address }}{{ $address->building }}</p>
                                 <input type="hidden" name="address_id" value="{{ $address->id }}">
                             @else
-                                <p>住所が登録されていません</p>
+                                <p class="address">住所が登録されていません</p>
                             @endif
                             <div class="form__error">
                                 @error('address_id')

@@ -7,11 +7,6 @@
 @endsection
 
 @section('content')
-    @if (session('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
-        </div>
-    @endif
     <div class="profile-container">
         <h1 class="page-title">プロフィール設定</h1>
         <form class="profile-form" action="{{ route('profile.update') }}" method="post" enctype="multipart/form-data"

@@ -14,7 +14,7 @@
             <div class="form-group">
                 <label for="postal_code">郵便番号</label>
                 <input type="text" id="postal_code" name="postal_code"
-                    value="{{ old('postal_code', $address->postal_code ?? '') }}">
+                    value="{{ old('postal_code', $address->postal_code ?? '') }}" required>
                 <div class="form__error">
                     @error('postal_code')
                         {{ $message }}
@@ -23,7 +23,8 @@
             </div>
             <div class="form-group">
                 <label for="address">住所</label>
-                <input type="text" id="address" name="address" value="{{ old('address', $address->address ?? '') }}">
+                <input type="text" id="address" name="address" value="{{ old('address', $address->address ?? '') }}"
+                    required>
                 <div class="form__error">
                     @error('address')
                         {{ $message }}
