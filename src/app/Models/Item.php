@@ -41,4 +41,9 @@ class Item extends Model
     {
         return $this->hasMany(Like::class);
     }
+
+    public function isSold()
+    {
+        return $this->is_sold || $this->purchase()->exists();
+    }
 }

@@ -14,8 +14,9 @@
     <section class="item-list-container">
         <h1 class="visually-hidden">商品一覧</h1>
         <nav class="tab-menu">
-            <a href="{{ url('/') }}" class="tab {{ $tab === 'recommend' ? 'active' : '' }}">おすすめ</a>
-            <a href="{{ route('items.index', ['tab' => 'mylist']) }}"
+            <a href="{{ route('items.index', ['tab' => 'recommend', 'keyword' => request('keyword')]) }}"
+                class="tab {{ $tab === 'recommend' ? 'active' : '' }}">おすすめ</a>
+            <a href="{{ route('items.index', ['tab' => 'mylist', 'keyword' => request('keyword')]) }}"
                 class="tab {{ $tab === 'mylist' ? 'active' : '' }}">マイリスト</a>
         </nav>
 
@@ -33,7 +34,7 @@
                                     ? $item->img_url
                                     : asset('storage/' . $item->img_url) }}"
                                     alt="{{ $item->name }}">
-                                @if ($item->is_sold)
+                                @if ($item->isSold())
                                     <span class="sold-label">SOLD</span>
                                 @endif
                             </div>

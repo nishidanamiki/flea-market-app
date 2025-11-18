@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Address;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 
@@ -36,7 +37,7 @@ class PurchaseRequest extends FormRequest
             $user = Auth::user();
             $addressId = $this->input('address_id');
 
-            if ($addressId && !$user->addresses->contains('id', $addressId)) {
+            if (!Address::where('id', $addressId)->where('user_id', $user->id)->exists()) {
                 $validator->errors()->add('address_id', '不正な住所が指定されています');
             }
         });
