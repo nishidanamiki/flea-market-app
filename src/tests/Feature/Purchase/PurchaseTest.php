@@ -21,7 +21,7 @@ class PurchaseTest extends TestCase
         $this->actingAs($user);
 
         $response = $this->post("/purchase/{$item->id}", [
-            'payment' => 'credit',
+            'payment' => 'card',
             'address_id' => $address->id,
         ]);
 
@@ -30,7 +30,7 @@ class PurchaseTest extends TestCase
         $this->assertDatabaseHas('purchases', [
             'user_id' => $user->id,
             'item_id' => $item->id,
-            'payment_method' => 'credit',
+            'payment_method' => 'card',
             'status' => 'purchased',
         ]);
 
@@ -46,7 +46,7 @@ class PurchaseTest extends TestCase
         $this->actingAs($user);
 
         $response = $this->post("/purchase/{$item->id}", [
-            'payment' => 'credit',
+            'payment' => 'card',
             'address_id' => $address->id,
         ]);
 
@@ -67,7 +67,7 @@ class PurchaseTest extends TestCase
         $this->actingAs($user);
 
         $this->post("/purchase/{$item->id}", [
-            'payment' => 'credit',
+            'payment' => 'card',
             'address_id' => $address->id,
         ]);
 
@@ -85,7 +85,7 @@ class PurchaseTest extends TestCase
         $this->actingAs($user);
 
         $this->post("/purchase/{$item->id}", [
-            'payment' => 'credit',
+            'payment' => 'card',
             'address_id' => $address->id,
         ]);
 
@@ -103,7 +103,7 @@ class PurchaseTest extends TestCase
         $this->actingAs($user);
 
         $response = $this->post("/purchase/{$item->id}", [
-            'payment' => 'credit',
+            'payment' => 'card',
             'address_id' => $address->id,
         ]);
 

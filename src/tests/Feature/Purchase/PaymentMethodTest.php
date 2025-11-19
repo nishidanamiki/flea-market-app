@@ -23,8 +23,8 @@ class PaymentMethodTest extends TestCase
         $response = $this->get("/purchase/{$item->id}");
 
         $response->assertStatus(200);
-        $response->assertSee('convenience');
-        $response->assertSee('credit');
+        $response->assertSee('konbini');
+        $response->assertSee('card');
     }
 
     public function test_支払い方法を選択すると小計画面に反映される()
@@ -36,7 +36,7 @@ class PaymentMethodTest extends TestCase
         $this->actingAs($user);
 
         $response = $this->post("/purchase/{$item->id}", [
-            'payment' => 'credit',
+            'payment' => 'card',
             'address_id' => $address->id,
         ]);
 
@@ -45,7 +45,7 @@ class PaymentMethodTest extends TestCase
         $this->assertDatabaseHas('purchases', [
             'user_id' => $user->id,
             'item_id' => $item->id,
-            'payment_method' => 'credit',
+            'payment_method' => 'card',
         ]);
     }
 }

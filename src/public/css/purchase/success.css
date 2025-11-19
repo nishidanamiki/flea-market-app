@@ -1,0 +1,19 @@
+.purchase-success {
+    width: 70%;
+    text-align: center;
+    margin: 100px auto;
+}
+
+.primary-button {
+    text-decoration: none;
+    background-color: #0073cc;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 4px;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.primary-button:hover {
+    background-color: #005fa3;
+}

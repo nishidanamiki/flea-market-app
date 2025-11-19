@@ -3,6 +3,10 @@
     margin: 25px auto;
 }
 
+.alert {
+    color: #ff0000;
+}
+
 .tab-menu {
     display: flex;
     justify-content: flex-start;

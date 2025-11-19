@@ -13,6 +13,11 @@
 @section('content')
     <section class="item-list-container">
         <h1 class="visually-hidden">商品一覧</h1>
+        @if (session('error'))
+            <div class="alert alert-danger">
+                {{ session('error') }}
+            </div>
+        @endif
         <nav class="tab-menu">
             <a href="{{ route('items.index', ['tab' => 'recommend', 'keyword' => request('keyword')]) }}"
                 class="tab {{ $tab === 'recommend' ? 'active' : '' }}">おすすめ</a>

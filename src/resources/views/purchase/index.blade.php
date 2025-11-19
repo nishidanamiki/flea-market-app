@@ -9,7 +9,9 @@
 @section('content')
     <div class="purchase-container">
         <h1 class="visually-hidden">購入内容の確認</h1>
-        <form action="{{ route('purchase.store', ['item_id' => $item->id]) }}" class="purchase-form" method="POST" novalidate>
+        <form
+            action="{{ app()->environment('testing') ? route('purchase.store', $item->id) : route('purchase.checkout', $item->id) }}"
+            class="purchase-form" method="POST" novalidate>
             @csrf
             <div class="purchase-flex">
                 <div class="purchase-left">
@@ -30,9 +32,9 @@
                         <label for="payment" class="visually-hidden">支払い方法を選択してください</label>
                         <select name="payment" id="payment" required>
                             <option value="" disabled selected hidden>選択してください</option>
-                            <option value="convenience" {{ old('payment') == 'convenience' ? 'selected' : '' }}>コンビニ払い
+                            <option value="konbini" {{ old('payment') == 'konbini' ? 'selected' : '' }}>コンビニ払い
                             </option>
-                            <option value="credit" {{ old('payment') == 'credit' ? 'selected' : '' }}>カード払い</option>
+                            <option value="card" {{ old('payment') == 'card' ? 'selected' : '' }}>カード払い</option>
                         </select>
                         <div class="form__error">
                             @error('payment')
@@ -88,9 +90,9 @@
             selectPayment.addEventListener('change', (e) => {
                 const selectedValue = e.target.value;
 
-                if (selectedValue === 'convenience') {
+                if (selectedValue === 'konbini') {
                     displayPayment.textContent = 'コンビニ払い';
-                } else if (selectedValue === 'credit') {
+                } else if (selectedValue === 'card') {
                     displayPayment.textContent = 'カード払い';
                 } else {
                     displayPayment.textContent = '選択されていません';
