@@ -95,16 +95,35 @@ cp .env .env.testing
 テスト用 DB 名を設定(.env.testing 内)
 
 ```env
+APP_ENV=testing
+APP_DEBUG=true
+
+DB_CONNECTION=mysql
+DB_HOST=mysql
+DB_PORT=3306
 DB_DATABASE=demo_test
+DB_USERNAME=root
+DB_PASSWORD=root
+
+CACHE_DRIVER=array
+SESSION_DRIVER=array
+QUEUE_CONNECTION=sync
+MAIL_MAILER=log
 ```
 
 2.テスト用データベースを作成
 
 ```bash
-docker compose exec mysql mysql -u root -proot -e "CREATE DATABASE demo_test;"
+docker compose exec mysql mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS demo_test;"
 ```
 
-3.テスト実行
+3.テスト用マイグレーション
+
+```bash
+php artisan migrate --env=testing
+```
+
+4.テスト実行
 
 ```bash
 php artisan test
