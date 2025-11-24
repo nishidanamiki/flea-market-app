@@ -99,12 +99,10 @@
     margin: 10px auto;
 }
 
-.postal-code,
 .address {
     padding: 0 0 0 75px;
     margin: 0;
 }
-
 
 .form__error {
     margin-left: 75px;

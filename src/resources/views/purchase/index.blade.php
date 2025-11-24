@@ -49,8 +49,8 @@
                         </div>
                         <div class="address-area">
                             @if ($address)
-                                <p class="postal-code">〒{{ $address->postal_code }}</p>
-                                <p class="address">{{ $address->address }}{{ $address->building }}</p>
+                                <p class="address">
+                                    〒{{ $address->postal_code }}<br>{{ $address->address }}{{ $address->building }}</p>
                                 <input type="hidden" name="address_id" value="{{ $address->id }}">
                             @else
                                 <p class="address">住所が登録されていません</p>

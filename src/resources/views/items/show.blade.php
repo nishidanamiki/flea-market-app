@@ -23,27 +23,29 @@
                             <form action="{{ route('items.unlike', $item) }}" method="post" class="like-form">
                                 @csrf
                                 @method('DELETE')
-                                <button class="like-button liked" type="submit">
-                                    <i class="fa-solid fa-star"></i>
+                                <button class="like-button" type="submit">
+                                    <img src="{{ asset('images/ハートロゴ_ピンク.png') }}" alt="いいね済ロゴ">
                                 </button>
                             </form>
                         @else
                             <form action="{{ route('items.like', $item) }}" method="post" class="like-form">
                                 @csrf
                                 <button class="like-button" type="submit">
-                                    <i class="fa-regular fa-star"></i>
+                                    <img src="{{ asset('images/ハートロゴ_デフォルト.png') }}" alt="未いいねロゴ">
                                 </button>
                             </form>
                         @endif
                     @else
                         <a href="{{ route('login') }}" class="like-button">
-                            <i class="fa-regular fa-star"></i>
+                            <img src="{{ asset('images/ハートロゴ_デフォルト.png') }}" alt="未いいねロゴ">
                         </a>
                     @endif
                     <span class="like-count">{{ $item->likes ? $item->likes->count() : 0 }}</span>
                 </div>
                 <div class="comment-icon">
-                    <a href="#comments-section"><i class="fa-regular fa-comment"></i></a>
+                    <a href="#comments-section">
+                        <img src="{{ asset('images/ふきだしロゴ.png') }}" alt="コメントロゴ">
+                    </a>
                     <span class="comment-count">{{ $item->comments->count() }}</span>
                 </div>
             </div>

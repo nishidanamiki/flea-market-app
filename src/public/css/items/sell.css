@@ -138,7 +138,7 @@ textarea {
     width: 100%;
 }
 
-.price-input .yen-mark {
+.yen-mark {
     position: absolute;
     left: 10px;
     top: 50%;

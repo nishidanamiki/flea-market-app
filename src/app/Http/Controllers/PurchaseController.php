@@ -37,16 +37,15 @@ class PurchaseController extends Controller
     public function updateAddress(AddressRequest $request, $item_id)
     {
         $validated = $request->validated();
-
         $user = Auth::user();
-        Address::updateOrCreate(
-            ['user_id' => $user->id],
-            [
-                'postal_code' => $validated['postal_code'],
-                'address' => $validated['address'],
-                'building' => $validated['building'] ?? null,
-            ]
-        );
+
+        Address::create([
+            'user_id' => $user->id,
+            'postal_code' => $validated['postal_code'],
+            'address' => $validated['address'],
+            'building' => $validated['building'] ?? null,
+        ]);
+
         return redirect()->route('purchase', ['item_id' => $item_id]);
     }
 
@@ -102,6 +101,11 @@ class PurchaseController extends Controller
 
             $session = Session::create([
                 'payment_method_types' => ['konbini'],
+                'payment_method_options' => [
+                    'konbini' => [
+                        'expires_after_days' => 3,
+                    ]
+                ],
                 'line_items' => [[
                     'price_data' => [
                         'currency' => 'jpy',
@@ -113,8 +117,7 @@ class PurchaseController extends Controller
                     'quantity' => 1,
                 ]],
                 'mode' => 'payment',
-                'success_url' => route('purchase.success', ['item' > $item->id]),
-                'cancel_url' => route('purchase.cancel', ['item' => $item->id]),
+                'success_url' => route('purchase.success', ['item_id' => $item->id]),
             ]);
 
             return redirect($session->url);
@@ -137,8 +140,8 @@ class PurchaseController extends Controller
                 'quantity' => 1,
             ]],
             'mode' => 'payment',
-            'success_url' => route('purchase.success', ['item' => $item->id]),
-            'cancel_url' => route('purchase.cancel', ['item' => $item->id]),
+            'success_url' => route('purchase.success', ['item_id' => $item->id]),
+            'cancel_url' => route('purchase.cancel', ['item_id' => $item->id]),
         ]);
 
         return redirect($session->url);

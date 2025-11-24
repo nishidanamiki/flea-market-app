@@ -11,7 +11,7 @@ class LikeController extends Controller
     public function store(Item $item)
     {
         $user = Auth::user();
-        //「いいね」していない場合のみ登録
+
         if (! $item->likes()->where('user_id', $user->id)->exists()) {
             Like::create([
                 'user_id' => $user->id,
@@ -24,7 +24,7 @@ class LikeController extends Controller
     public function destroy(Item $item)
     {
         $user = Auth::user();
-        //既に「いいね」済なら削除
+
         $like = $item->likes()->where('user_id', $user->id)->first();
         if ($like) {
             $like->delete();

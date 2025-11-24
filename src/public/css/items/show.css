@@ -60,20 +60,6 @@
     margin-left: 10px;
 }
 
-.like-button i {
-    font-size: 28px;
-    color: #4b4b4b;
-}
-
-.like-button.liked i {
-    color: gold;
-}
-
-.comment-icon i {
-    font-size: 30px;
-    color: #4b4b4b;
-}
-
 .like-count,
 .comment-count {
     color: #000;

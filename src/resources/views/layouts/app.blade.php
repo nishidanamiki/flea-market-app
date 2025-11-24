@@ -8,7 +8,6 @@
     <title>@yield('title', 'COACHTECHフリマ')</title>
     <link rel="stylesheet" href="{{ asset('css/sanitize.css') }}">
     <link rel="stylesheet" href="{{ asset('css/common.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     @yield('css')
 </head>
 
@@ -17,7 +16,7 @@
         <div class="header__inner">
             <div class="header__left">
                 <a href="{{ url('/') }}">
-                    <img src="{{ asset('images/logo.svg') }}" alt="COACHTECHフリマのロゴ">
+                    <img src="{{ asset('images/COACHTECHヘッダーロゴ.png') }}" alt="COACHTECHフリマのロゴ">
                 </a>
             </div>
 

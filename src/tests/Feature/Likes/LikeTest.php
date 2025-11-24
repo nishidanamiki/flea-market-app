@@ -59,7 +59,7 @@ class LikeTest extends TestCase
 
         $response = $this->get("/item/{$item->id}");
 
-        $response->assertSee('fa-solid fa-star');
+        $response->assertSee('ハートロゴ_ピンク.png');
     }
 
     public function test_いいね解除するとDBから削除される()
