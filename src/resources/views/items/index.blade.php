@@ -35,10 +35,11 @@
                     <article class="item-card">
                         <a href="{{ route('items.show', ['item_id' => $item->id]) }}">
                             <div class="item-image">
-                                <img src="{{ Str::startsWith($item->img_url, ['http://', 'https://'])
-                                    ? $item->img_url
-                                    : asset('storage/' . $item->img_url) }}"
-                                    alt="{{ $item->name }}">
+                                @if (Str::startsWith($item->img_url, 'images/'))
+                                    <img src="{{ asset($item->img_url) }}" alt="{{ $item->name }}">
+                                @else
+                                    <img src="{{ asset('storage/' . $item->img_url) }}" alt="{{ $item->name }}">
+                                @endif
                                 @if ($item->isSold())
                                     <span class="sold-label">SOLD</span>
                                 @endif
