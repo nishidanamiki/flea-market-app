@@ -18,8 +18,11 @@
                     <section class="item-info">
                         <div class="item-content">
                             <div class="item-image">
-                                <img src="{{ Str::startsWith($item->img_url, ['http://', 'https://']) ? $item->img_url : asset('storage/' . $item->img_url) }}"
-                                    alt="{{ $item->name }}">
+                                @if (Str::startsWith($item->img_url, 'images/'))
+                                    <img src="{{ asset($item->img_url) }}" alt="{{ $item->name }}">
+                                @else
+                                    <img src="{{ asset('storage/' . $item->img_url) }}" alt="{{ $item->name }}">
+                                @endif
                             </div>
                             <div class="item-detail">
                                 <p class="item-name">{{ $item->name }}</p>
@@ -34,7 +37,7 @@
                             <option value="" disabled selected hidden>選択してください</option>
                             <option value="konbini" {{ old('payment') == 'konbini' ? 'selected' : '' }}>コンビニ払い
                             </option>
-                            <option value="card" {{ old('payment') == 'card' ? 'selected' : '' }}>カード払い</option>
+                            <option value="card" {{ old('payment') == 'card' ? 'selected' : '' }}>カード支払い</option>
                         </select>
                         <div class="form__error">
                             @error('payment')
@@ -93,7 +96,7 @@
                 if (selectedValue === 'konbini') {
                     displayPayment.textContent = 'コンビニ払い';
                 } else if (selectedValue === 'card') {
-                    displayPayment.textContent = 'カード払い';
+                    displayPayment.textContent = 'カード支払い';
                 } else {
                     displayPayment.textContent = '選択されていません';
                 }

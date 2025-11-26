@@ -41,8 +41,11 @@
                 @if ($item)
                     <article class="item-card">
                         <div class="item-image">
-                            <img src="{{ \Illuminate\Support\Str::startsWith($item->img_url, ['http://', 'https://']) ? $item->img_url : asset('storage/' . $item->img_url) }}"
-                                alt="{{ $item->name }}の画像">
+                            @if (Str::startsWith($item->img_url, 'images/'))
+                                <img src={{ asset($item->img_url) }} alt="{{ $item->name }}">
+                            @else
+                                <img src="{{ asset('storage/' . $item->img_url) }}" alt="{{ $item->name }}">
+                            @endif
                         </div>
                         <div class="item-info">
                             <h3 class="item-name">{{ $item->name }}</h3>

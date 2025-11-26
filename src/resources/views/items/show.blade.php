@@ -9,8 +9,11 @@
 @section('content')
     <div class="item-detail-wrapper">
         <div class="item-image-area">
-            <img src="{{ Str::startsWith($item->img_url, ['http://', 'https://']) ? $item->img_url : asset('storage/' . $item->img_url) }}"
-                alt="{{ $item->name }}">
+            @if (Str::startsWith($item->img_url, 'images/'))
+                <img src="{{ asset($item->img_url) }}" alt="{{ $item->name }}">
+            @else
+                <img src="{{ asset('storage/' . $item->img_url) }}" alt="{{ $item->name }}">
+            @endif
         </div>
         <div class="item-info-area">
             <h1 class="item-name">{{ $item->name }}</h1>
