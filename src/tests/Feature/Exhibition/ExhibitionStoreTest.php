@@ -26,6 +26,7 @@ class ExhibitionStoreTest extends TestCase
 
         $postData = [
             'name' => 'テスト商品',
+            'brand' => 'テストブランド',
             'description' => 'テスト説明文です。',
             'condition' => '良好',
             'price' => 5000,
@@ -39,6 +40,7 @@ class ExhibitionStoreTest extends TestCase
 
         $this->assertDatabaseHas('items', [
             'name' => 'テスト商品',
+            'brand' => 'テストブランド',
             'description' => 'テスト説明文です。',
             'condition' => '良好',
             'price' => 5000,
