@@ -26,6 +26,7 @@
         </nav>
 
         @if ($tab === 'mylist' && !auth()->check())
+            {{-- ログインしていない場合は何も表示しない --}}
         @else
             <h2 class="visually-hidden">
                 {{ $tab === 'recommend' ? 'おすすめ商品一覧' : 'マイリストの商品一覧' }}

@@ -43,7 +43,7 @@
                     <div class="header__center">
                         <form action="{{ route('items.index') }}" class="search-form" method="get">
                             <label for="search" class="visually-hidden">商品検索</label>
-                            <input class="search" type="text" name="keyword" placeholder="なにをお探しですか？"
+                            <input id="search" class="search" type="text" name="keyword" placeholder="なにをお探しですか？"
                                 value="{{ old('keyword', request('keyword')) }}">
                         </form>
                     </div>
@@ -60,8 +60,8 @@
     </header>
     <main>
         @yield('content')
-        @yield('script')
     </main>
+    @yield('script')
 </body>
 
 </html>

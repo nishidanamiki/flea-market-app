@@ -1,5 +1,9 @@
 @extends('layouts.app')
 
+@php
+    use Illuminate\Support\Str;
+@endphp
+
 @section('title', 'マイページ - COACHTECHフリマ')
 
 @section('css')
@@ -11,7 +15,7 @@
         <h1 class="visually-hidden">マイページ</h1>
         <div class="mypage-top">
             <div class="mypage-img">
-                @if (Auth::user()->profile_image_path && file_exists(public_path('storage/' . Auth::user()->profile_image_path)))
+                @if (Auth::user()->profile_image_path)
                     <img src="{{ asset('storage/' . Auth::user()->profile_image_path) }}"
                         alt="{{ Auth::user()->name }}のプロフィール画像">
                 @else
@@ -42,7 +46,7 @@
                     <li class="item-card">
                         <div class="item-image">
                             @if (Str::startsWith($item->img_url, 'images/'))
-                                <img src={{ asset($item->img_url) }} alt="{{ $item->name }}">
+                                <img src="{{ asset($item->img_url) }}" alt="{{ $item->name }}">
                             @else
                                 <img src="{{ asset('storage/' . $item->img_url) }}" alt="{{ $item->name }}">
                             @endif

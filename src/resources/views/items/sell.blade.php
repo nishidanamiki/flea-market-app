@@ -26,7 +26,7 @@
                     @endif
                 </div>
             </div>
-            <section>
+            <div class="form-section">
                 <h2 class="sub-title">商品の詳細</h2>
                 <div class="form-group">
                     <label for="category" class="form-label">カテゴリー</label>
@@ -64,8 +64,8 @@
                         @enderror
                     </div>
                 </div>
-            </section>
-            <section>
+            </div>
+            <div class="form-section">
                 <h2 class="sub-title">商品名と説明</h2>
                 <div class="form-group">
                     <label for="name" class="form-label">商品名</label>
@@ -102,7 +102,7 @@
                     </div>
                 </div>
                 <button class="form-button">出品する</button>
-            </section>
+            </div>
         </form>
     </section>
 @endsection

@@ -1,5 +1,9 @@
 @extends('layouts.app')
 
+@php
+    use Illuminate\Support\Str;
+@endphp
+
 @section('title', '購入内容の確認 - COACHTECHフリマ')
 
 @section('css')
@@ -53,7 +57,7 @@
                         <div class="address-area">
                             @if ($address)
                                 <p class="address">
-                                    〒{{ $address->postal_code }}<br>{{ $address->address }}{{ $address->building }}</p>
+                                    〒{{ $address->postal_code }}<br>{{ $address->address }} {{ $address->building }}</p>
                                 <input type="hidden" name="address_id" value="{{ $address->id }}">
                             @else
                                 <p class="address">住所が登録されていません</p>
@@ -74,7 +78,15 @@
                         </div>
                         <div class="summary-row">
                             <span class="label">支払い方法</span>
-                            <span class="value" id="selected-payment">選択されていません</span>
+                            <span class="value" id="selected-payment">
+                                @if (old('payment') === 'konbini')
+                                    コンビニ払い
+                                @elseif (old('payment') === 'card')
+                                    カード支払い
+                                @else
+                                    選択されていません
+                                @endif
+                            </span>
                         </div>
                     </div>
                     <button class="purchase-button" type="submit">購入する</button>

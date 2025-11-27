@@ -24,7 +24,7 @@ Route::middleware('auth', 'verified')->group(function () {
     Route::post('/purchase/{item_id}', [PurchaseController::class, 'store'])->name('purchase.store'); //テスト用
     Route::post('/purchase/{item_id}/checkout', [PurchaseController::class, 'checkout'])->name('purchase.checkout'); //本番用
     Route::get('/purchase/address/{item_id}', [PurchaseController::class, 'editAddress'])->name('address.edit');
-    Route::post('/purchase/address/{item_id}', [PurchaseController::class, 'updateAddress'])->name('address.update');
+    Route::patch('/purchase/address/{item_id}', [PurchaseController::class, 'updateAddress'])->name('address.update');
     Route::get('/purchase/success/{item_id}', [PurchaseController::class, 'success'])->name('purchase.success');
     Route::get('/purchase/cancel/{item_id}', [PurchaseController::class, 'cancel'])->name('purchase.cancel');
 
