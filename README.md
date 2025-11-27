@@ -84,9 +84,38 @@ php artisan db:seed
 php artisan storage:link
 ```
 
+## Stripe の設定（決済機能を利用する場合）
+
+このアプリでは Stripe（テストモード）で決済を行います。
+
+### 1. Stripe テストキーの取得
+
+以下の URL から「公開可能キー（pk*test*〜）」と
+「シークレットキー（sk*test*〜）」を取得してください。
+
+https://dashboard.stripe.com/test/apikeys
+
+### 2. .env に設定
+
+```env
+STRIPE_KEY=pk_test_xxxxxxxxxxxxxxxx
+STRIPE_SECRET=sk_test_xxxxxxxxxxxxxxxx
+```
+
+※ 上記はダミーです。実際のテストキーを使用してください。
+
+### 3. テスト決済用カード番号
+
+Stripe のテストカード：
+
+- カード番号：4242 4242 4242 4242
+- 有効期限：未来の日付
+- CVC：任意の 3 桁
+- 郵便番号：任意
+
 ## テスト環境の準備
 
-1.`.env.testing`を作成。
+1. `.env.testing`を作成。
 
 ```bash
 cp .env .env.testing
