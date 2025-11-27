@@ -53,6 +53,28 @@ class ItemDetailTest extends TestCase
         $response->assertSee('2'); //コメント数
     }
 
+    public function test_複数選択されたカテゴリが表示される()
+    {
+        $user = User::factory()->create();
+
+        $item = Item::factory()->create([
+            'user_id' => User::factory()->create()->id,
+            'name' => 'テスト商品',
+        ]);
+
+        $categories = Category::factory()->count(3)->create();
+
+        $item->categories()->attach($categories->pluck('id'));
+
+        $response = $this->actingAs($user)->get(route('items.show', ['item_id' => $item->id]));
+
+        $response->assertSee('テスト商品');
+
+        foreach ($categories as $category) {
+            $response->assertSee($category->name);
+        }
+    }
+
     public function test_コメントしたユーザー名とコメント内容が表示される()
     {
         $user = User::factory()->create(['name' => '山田太郎']);
