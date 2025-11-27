@@ -19,7 +19,7 @@ class AddressUpdateTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->post(route('address.update', $item->id), [
+        $response = $this->patch(route('address.update', $item->id), [
             'postal_code' => '123-4567',
             'address' => '東京都渋谷区テスト１－１',
             'building' => 'テストマンション１０１',
