@@ -27,12 +27,12 @@
 
         @if ($tab === 'mylist' && !auth()->check())
         @else
-            <section class="item-list">
-                <h2 class="visually-hidden">
-                    {{ $tab === 'recommend' ? 'おすすめ商品一覧' : 'マイリストの商品一覧' }}
-                </h2>
+            <h2 class="visually-hidden">
+                {{ $tab === 'recommend' ? 'おすすめ商品一覧' : 'マイリストの商品一覧' }}
+            </h2>
+            <ul class="item-list">
                 @foreach ($items as $item)
-                    <article class="item-card">
+                    <li class="item-card">
                         <a href="{{ route('items.show', ['item_id' => $item->id]) }}">
                             <div class="item-image">
                                 @if (Str::startsWith($item->img_url, 'images/'))
@@ -48,9 +48,9 @@
                                 <h3 class="item-name">{{ $item->name }}</h3>
                             </div>
                         </a>
-                    </article>
+                    </li>
                 @endforeach
-            </section>
+            </ul>
         @endif
     </section>
 @endsection

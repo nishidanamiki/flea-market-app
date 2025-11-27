@@ -28,10 +28,10 @@
                 class="tab {{ $page === 'sell' ? 'active' : '' }}">出品した商品</a>
             <a href="{{ route('mypage', ['page' => 'buy']) }}" class="tab {{ $page === 'buy' ? 'active' : '' }}">購入した商品</a>
         </nav>
-        <div class="item-list">
-            <h2 class="visually-hidden">
-                {{ $page === 'sell' ? '出品した商品一覧' : '購入した商品一覧' }}
-            </h2>
+        <h2 class="visually-hidden">
+            {{ $page === 'sell' ? '出品した商品一覧' : '購入した商品一覧' }}
+        </h2>
+        <ul class="item-list">
             @foreach ($items as $item)
                 @if ($page === 'buy')
                     @php
@@ -39,7 +39,7 @@
                     @endphp
                 @endif
                 @if ($item)
-                    <article class="item-card">
+                    <li class="item-card">
                         <div class="item-image">
                             @if (Str::startsWith($item->img_url, 'images/'))
                                 <img src={{ asset($item->img_url) }} alt="{{ $item->name }}">
@@ -50,9 +50,9 @@
                         <div class="item-info">
                             <h3 class="item-name">{{ $item->name }}</h3>
                         </div>
-                    </article>
+                    </li>
                 @endif
             @endforeach
-        </div>
+        </ul>
     </div>
 @endsection
