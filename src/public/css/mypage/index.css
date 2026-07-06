@@ -34,6 +34,11 @@
     gap: 200px;
 }
 
+.profile-name {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
 .edit-button {
     text-decoration: none;
     border: 1.5px solid #ff5555;

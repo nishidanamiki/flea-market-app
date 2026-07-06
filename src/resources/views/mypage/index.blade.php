@@ -23,7 +23,7 @@
                 @endif
             </div>
             <div class="mypage-info">
-                <h2 class="profile-name">{{ Auth::user()->name }}</h2>
+                <p class="profile-name">{{ Auth::user()->name }}</p>
                 <a href="{{ route('profile.edit') }}" class="edit-button">プロフィールを編集</a>
             </div>
         </div>
