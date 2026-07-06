@@ -15,6 +15,10 @@
     margin-top: 1.5rem;
 }
 
+.category-title {
+    margin: 0;
+}
+
 .image-upload-box {
     position: relative;
     width: 100%;
@@ -133,7 +137,7 @@ textarea {
 }
 
 .price-input {
-    position:relative;
+    position: relative;
     display: inline-block;
     width: 100%;
 }

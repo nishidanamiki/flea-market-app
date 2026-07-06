@@ -29,7 +29,7 @@
             <div class="form-section">
                 <h2 class="sub-title">商品の詳細</h2>
                 <div class="form-group">
-                    <label for="category" class="form-label">カテゴリー</label>
+                    <p class="form-label category-title">カテゴリー</p>
                     <div class="category-tags">
                         @foreach ($categories as $category)
                             <label class="category-label">
