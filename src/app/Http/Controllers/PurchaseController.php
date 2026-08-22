@@ -123,8 +123,6 @@ class PurchaseController extends Controller
             return redirect($session->url);
         }
 
-        session()->put('payment_method', 'card');
-
         Stripe::setApiKey(config('services.stripe.secret'));
 
         $session = Session::create([
@@ -140,7 +138,13 @@ class PurchaseController extends Controller
                 'quantity' => 1,
             ]],
             'mode' => 'payment',
-            'success_url' => route('purchase.success', ['item_id' => $item->id]),
+
+            'metadata' => [
+                'item_id' => $item->id,
+                'user_id' => auth()->id(),
+            ],
+            'success_url' => route('purchase.success', ['item_id' => $item->id])
+                . '?session_id={CHECKOUT_SESSION_ID}',
             'cancel_url' => route('purchase.cancel', ['item_id' => $item->id]),
         ]);
 
@@ -151,39 +155,58 @@ class PurchaseController extends Controller
     {
         $item = Item::findOrFail($item_id);
 
-        if ($item->is_sold && !session()->has('payment_method')) {
-            return view('purchase.success', [
-                'item' => $item,
-                'status' => 'pending'
-            ]);
+        $sessionId = $request->query('session_id');
+
+        if (!$sessionId) {
+            return redirect()
+                ->route('items.index')
+                ->with('error', '決済情報を確認できませんでした');
         }
 
-        $payment = session()->get('payment_method');
+        Stripe::setApiKey(config('services.stripe.secret'));
 
-        if ($payment === 'card') {
-            $address = auth()->user()->addresses()->latest()->first();
-            $address_id = optional($address)->id;
+        try {
+            $stripeSession = Session::retrieve($sessionId);
+        } catch (\Exception $e) {
+            return redirect()
+                ->route('items.index')
+                ->with('error', '決済情報を確認できませんでした');
+        }
 
-            Purchase::create([
+        if ($stripeSession->payment_status !== 'paid') {
+            return redirect()
+                ->route('items.index')
+                ->with('error', '決済が完了していません');
+        }
+
+        if (
+            (int) $stripeSession->metadata->item_id !== (int) $item_id ||
+            (int) $stripeSession->metadata->user_id !== (int) auth()->id()
+        ) {
+            abort(403);
+        }
+
+        $address = auth()->user()->addresses()->latest()->first();
+        $address_id = optional($address)->id;
+
+        Purchase::firstOrCreate(
+            [
                 'user_id' => auth()->id(),
                 'item_id' => $item_id,
+            ],
+            [
                 'payment_method' => 'card',
                 'address_id' => $address_id,
                 'status' => 'paid',
-            ]);
+            ]
+        );
 
-            $item->update(['is_sold' => true]);
+        $item->update(['is_sold' => true]);
 
-            session()->forget('payment_method');
 
-            return view('purchase.success', [
-                'item' => $item,
-                'status' => 'paid'
-            ]);
-        }
         return view('purchase.success', [
             'item' => $item,
-            'status' => 'pending'
+            'status' => 'paid'
         ]);
     }
 
