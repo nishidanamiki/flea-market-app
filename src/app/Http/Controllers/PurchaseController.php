@@ -10,7 +10,7 @@ use App\Models\Purchase;
 use Illuminate\Support\Facades\Auth;
 use Stripe\Stripe;
 use Stripe\Checkout\Session;
-use Symfony\Component\HttpFoundation\Request;
+use Illuminate\Http\Request;
 
 class PurchaseController extends Controller
 {
