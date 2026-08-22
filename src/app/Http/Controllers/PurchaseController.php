@@ -117,7 +117,6 @@ class PurchaseController extends Controller
                     'quantity' => 1,
                 ]],
                 'mode' => 'payment',
-                'success_url' => route('purchase.success', ['item_id' => $item->id]),
             ]);
 
             return redirect($session->url);
