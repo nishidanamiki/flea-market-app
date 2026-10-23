@@ -1,0 +1,18 @@
+FROM php:8.4.27-fpm
+
+COPY php.ini /usr/local/etc/php/
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        default-mysql-client \
+        libzip-dev \
+        unzip \
+    && docker-php-ext-install pdo_mysql zip bcmath \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
+
+WORKDIR /var/www
+
+RUN groupadd -g 1000 nishida \
+    && useradd -m -u 1000 -g 1000 nishida
