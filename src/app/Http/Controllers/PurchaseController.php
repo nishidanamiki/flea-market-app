@@ -8,6 +8,7 @@ use App\Models\Item;
 use App\Models\Address;
 use App\Models\Purchase;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Stripe\Stripe;
 use Stripe\Checkout\Session;
 use Illuminate\Http\Request;
@@ -52,6 +53,10 @@ class PurchaseController extends Controller
     //テスト時はStripeを使わずstoreを呼ぶ
     public function store(PurchaseRequest $request, $item_id)
     {
+        if (!app()->environment('testing')) {
+            abort(403);
+        }
+
         $validated = $request->validated();
 
         $item = Item::findOrFail($item_id);
@@ -87,6 +92,7 @@ class PurchaseController extends Controller
         $address_id = optional($address)->id;
 
         if ($validated['payment'] === 'konbini') {
+            abort(403, 'コンビニ決済は現在利用できません');
             Purchase::create([
                 'user_id' => auth()->id(),
                 'item_id' => $item_id,
@@ -141,6 +147,7 @@ class PurchaseController extends Controller
             'metadata' => [
                 'item_id' => $item->id,
                 'user_id' => auth()->id(),
+                'address_id' => $validated['address_id'],
             ],
             'success_url' => route('purchase.success', ['item_id' => $item->id])
                 . '?session_id={CHECKOUT_SESSION_ID}',
@@ -179,28 +186,54 @@ class PurchaseController extends Controller
         }
 
         if (
+            $stripeSession->mode !== 'payment' ||
+            $stripeSession->currency !== 'jpy' ||
+            (int) $stripeSession->amount_total !== (int) $item->price
+        ) {
+            abort(403, '決済内容が商品情報と一致しません');
+        }
+
+        if (
             (int) $stripeSession->metadata->item_id !== (int) $item_id ||
             (int) $stripeSession->metadata->user_id !== (int) auth()->id()
         ) {
             abort(403);
         }
 
-        $address = auth()->user()->addresses()->latest()->first();
-        $address_id = optional($address)->id;
+        $address_id = (int) $stripeSession->metadata->address_id;
 
-        Purchase::firstOrCreate(
-            [
+        $address = auth()->user()->addresses()->find($address_id);
+
+        if (!$address) {
+            abort(403, '配送先住所を確認できません');
+        }
+
+        DB::transaction(function () use ($item_id, $address_id) {
+            // 対象の商品をロックして取得
+            $item = Item::whereKey($item_id)->lockForUpdate()->firstOrFail();
+
+            // すでに購入履歴がある場合は、重複登録を防ぐ
+            if (Purchase::where('item_id', $item->id)->exists()) {
+                abort(409, 'この商品はすでに購入されています');
+            }
+
+            // 売却済みの商品は購入できない
+            if ($item->is_sold) {
+                abort(409, 'この商品はすでに売り切れています');
+            }
+
+            // 購入履歴を登録
+            Purchase::create([
                 'user_id' => auth()->id(),
-                'item_id' => $item_id,
-            ],
-            [
+                'item_id' => $item->id,
                 'payment_method' => 'card',
                 'address_id' => $address_id,
                 'status' => 'paid',
-            ]
-        );
+            ]);
 
-        $item->update(['is_sold' => true]);
+            // 商品を売却済みに変更
+            $item->update(['is_sold' => true]);
+        });
 
 
         return view('purchase.success', [
