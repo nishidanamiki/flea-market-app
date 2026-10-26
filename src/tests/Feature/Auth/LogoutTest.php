@@ -22,11 +22,11 @@ class LogoutTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_未ログイン状態でもログアウトするとトップページに遷移する()
+    public function test_未ログイン状態でログアウトするとログインページに遷移する()
     {
         $response = $this->post('/logout');
 
-        $response->assertRedirect('/');
+        $response->assertRedirect('/login');
 
         $this->assertGuest();
     }
