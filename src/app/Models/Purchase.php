@@ -15,6 +15,8 @@ class Purchase extends Model
         'address_id',
         'payment_method',
         'status',
+        'stripe_session_id',
+        'stripe_payment_intent_id',
     ];
 
     public function user()
