@@ -242,8 +242,10 @@ class PurchaseController extends Controller
         ]);
     }
 
-    public function cancel(Request $request, Item $item)
+    public function cancel($item_id)
     {
+        $item = Item::findOrFail($item_id);
+
         return view('purchase.cancel', compact('item'));
     }
 }
