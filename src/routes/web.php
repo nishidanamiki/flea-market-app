@@ -7,6 +7,7 @@ use App\Http\Controllers\ItemController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\StripeWebhookController;
 
 Route::get('/', [ItemController::class, 'index'])->name('items.index');
 Route::get('/item/{item_id}', [ItemController::class, 'show'])->name('items.show');
@@ -33,3 +34,5 @@ Route::middleware('auth', 'verified')->group(function () {
 
     Route::post('/items/{item}/comment', [CommentController::class, 'store'])->name('comment.store');
 });
+
+Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle'])->name('stripe.webhook');

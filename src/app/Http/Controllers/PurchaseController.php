@@ -7,8 +7,8 @@ use App\Http\Requests\PurchaseRequest;
 use App\Models\Item;
 use App\Models\Address;
 use App\Models\Purchase;
+use App\Services\PurchaseService;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Stripe\Stripe;
 use Stripe\Checkout\Session;
 use Illuminate\Http\Request;
@@ -50,7 +50,7 @@ class PurchaseController extends Controller
         return redirect()->route('purchase', ['item_id' => $item_id]);
     }
 
-    //テスト時はStripeを使わずstoreを呼ぶ
+    // 既存テスト用の購入処理。本番環境では実行を禁止する
     public function store(PurchaseRequest $request, $item_id)
     {
         if (!app()->environment('testing')) {
@@ -78,7 +78,6 @@ class PurchaseController extends Controller
         return redirect()->route('items.index');
     }
 
-    //本番用：Stripe決済処理
     public function checkout(PurchaseRequest $request, $item_id)
     {
         $validated = $request->validated();
@@ -208,32 +207,14 @@ class PurchaseController extends Controller
             abort(403, '配送先住所を確認できません');
         }
 
-        DB::transaction(function () use ($item_id, $address_id) {
-            // 対象の商品をロックして取得
-            $item = Item::whereKey($item_id)->lockForUpdate()->firstOrFail();
+        // 購入確定処理をPurchaseServiceに任せる
+        try {
+            $purchaseService = new PurchaseService();
 
-            // すでに購入履歴がある場合は、重複登録を防ぐ
-            if (Purchase::where('item_id', $item->id)->exists()) {
-                abort(409, 'この商品はすでに購入されています');
-            }
-
-            // 売却済みの商品は購入できない
-            if ($item->is_sold) {
-                abort(409, 'この商品はすでに売り切れています');
-            }
-
-            // 購入履歴を登録
-            Purchase::create([
-                'user_id' => auth()->id(),
-                'item_id' => $item->id,
-                'payment_method' => 'card',
-                'address_id' => $address_id,
-                'status' => 'paid',
-            ]);
-
-            // 商品を売却済みに変更
-            $item->update(['is_sold' => true]);
-        });
+            $purchaseService->completePaidCheckout($stripeSession);
+        } catch (\RuntimeException $e) {
+            return redirect()->route('items.index')->with('error', '購入確定処理を完了できませんでした');
+        }
 
 
         return view('purchase.success', [

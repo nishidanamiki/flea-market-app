@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\PurchaseService;
 use Illuminate\Http\Request;
 use Stripe\Webhook;
 use Stripe\Exception\SignatureVerificationException;
@@ -10,36 +11,47 @@ class StripeWebhookController extends Controller
 {
     public function handle(Request $request)
     {
-        // Stripeから送られた通知の内容を取得
         $payload = $request->getContent();
 
-        // Stripeが付けた署名を取得
         $signature = $request->header('Stripe-Signature');
 
-        // Webhook署名検証用の秘密鍵を取得
         $secret = config('services.stripe.webhook_secret');
 
-        // 秘密鍵が設定されていない場合は処理しない
         if (!$secret) {
             return response()->json(['error' => 'Webhook設定エラー'], 503);
         }
 
         try {
-            // 通知が本当にStripeから届いたか検証
+            // Stripeの署名を検証し、偽装された通知を拒否する
             $event = Webhook::constructEvent(
                 $payload,
                 $signature,
                 $secret
             );
         } catch (\UnexpectedValueException $e) {
-            // 通知データの形式が不正
             return response()->json(['error' => '不正なデータ'], 400);
         } catch (SignatureVerificationException $e) {
-            // 署名が一致しない
             return response()->json(['error' => '署名検証失敗'], 400);
         }
 
-        // 現段階では署名検証のみ行う
+        if ($event->type === 'checkout.session.completed') {
+            $stripeSession = $event->data->object;
+
+            if ($stripeSession->payment_status === 'paid') {
+                try {
+                    $purchaseService = new PurchaseService();
+                    $purchaseService->completePaidCheckout($stripeSession);
+                } catch (\Throwable $e) {
+                    report($e);
+
+                    // 購入確定に失敗した場合は成功を返さず、Stripeの再送対象にする
+                    return response()->json([
+                        'error' => '購入確定処理に失敗しました',
+                    ], 500);
+                }
+            }
+        }
+
         return response()->json(['received' => true]);
     }
 }
