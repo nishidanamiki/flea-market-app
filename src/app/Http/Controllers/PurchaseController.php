@@ -8,10 +8,13 @@ use App\Models\Item;
 use App\Models\Address;
 use App\Models\Purchase;
 use App\Services\PurchaseService;
+use App\Services\CheckoutReservationService;
 use Illuminate\Support\Facades\Auth;
 use Stripe\Stripe;
 use Stripe\Checkout\Session;
 use Illuminate\Http\Request;
+use PhpParser\Node\Stmt\Return_;
+use Stripe\ApiOperations\Retrieve;
 
 class PurchaseController extends Controller
 {
@@ -87,73 +90,63 @@ class PurchaseController extends Controller
             return redirect()->route('items.index')->with('error', 'この商品は売り切れました');
         }
 
-        $address = auth()->user()->addresses()->latest()->first();
-        $address_id = optional($address)->id;
+        $address = auth()->user()
+            ->addresses()
+            ->findOrFail($validated['address_id']);
 
         if ($validated['payment'] === 'konbini') {
             abort(403, 'コンビニ決済は現在利用できません');
-            Purchase::create([
-                'user_id' => auth()->id(),
-                'item_id' => $item_id,
-                'payment_method' => 'konbini',
-                'address_id' => $address_id,
-                'status' => 'pending',
-            ]);
-
-            $item->update(['is_sold' => true]);
-
-            Stripe::setApiKey(config('services.stripe.secret'));
-
-            $session = Session::create([
-                'payment_method_types' => ['konbini'],
-                'payment_method_options' => [
-                    'konbini' => [
-                        'expires_after_days' => 3,
-                    ]
-                ],
-                'line_items' => [[
-                    'price_data' => [
-                        'currency' => 'jpy',
-                        'unit_amount' => $item->price,
-                        'product_data' => [
-                            'name' => $item->name,
-                        ],
-                    ],
-                    'quantity' => 1,
-                ]],
-                'mode' => 'payment',
-            ]);
-
-            return redirect($session->url);
         }
+
+        $reservationService = new CheckoutReservationService();
+
+        $reservation = $reservationService->reserve(
+            (int) $item->id,
+            (int) auth()->id()
+        );
 
         Stripe::setApiKey(config('services.stripe.secret'));
 
-        $session = Session::create([
-            'payment_method_types' => ['card'],
-            'line_items' => [[
-                'price_data' => [
-                    'currency' => 'jpy',
-                    'unit_amount' => $item->price,
-                    'product_data' => [
-                        'name' => $item->name,
-                    ],
+        try {
+            $session = Session::create([
+                'payment_method_types' => ['card'],
+                'line_items' => [
+                    [
+                        'price_data' => [
+                            'currency' => 'jpy',
+                            'unit_amount' => $item->price,
+                            'product_data' => [
+                                'name' => $item->name,
+                            ],
+                        ],
+                        'quantity' => 1,
+                    ]
                 ],
-                'quantity' => 1,
-            ]],
-            'mode' => 'payment',
+                'mode' => 'payment',
 
-            'metadata' => [
-                'item_id' => $item->id,
-                'user_id' => auth()->id(),
-                'address_id' => $validated['address_id'],
-            ],
-            'success_url' => route('purchase.success', ['item_id' => $item->id])
-                . '?session_id={CHECKOUT_SESSION_ID}',
-            'cancel_url' => route('purchase.cancel', ['item_id' => $item->id]),
-        ]);
+                'metadata' => [
+                    'item_id' => $item->id,
+                    'user_id' => auth()->id(),
+                    'address_id' => $validated['address_id'],
+                    'reservation_id' => (string) $reservation->id,
+                ],
+                'success_url' => route('purchase.success', ['item_id' => $item->id])
+                    . '?session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url' => route('purchase.cancel', ['item_id' => $item->id]),
+            ], [
+                'idempotency_key' => 'checkout_reservation_' . $reservation->id,
+            ]);
 
-        return redirect($session->url);
+            $reservationService->markAsReserved($reservation->id, $session);
+
+            return redirect($session->url);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()
+                ->route('items.index')
+                ->with('error', '決済の準備に失敗しました。しばらくしてからご確認ください');
+        }
     }
 
     public function success(Request $request, $item_id)

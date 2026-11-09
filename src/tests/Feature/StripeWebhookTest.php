@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Item;
 use App\Models\User;
 use App\Models\Address;
+use App\Models\CheckoutReservation;
 use App\Http\Controllers\StripeWebhookController;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -109,6 +110,14 @@ class StripeWebhookTest extends TestCase
             'user_id' => $buyer->id,
         ]);
 
+        $reservation = CheckoutReservation::create([
+            'item_id' => $item->id,
+            'user_id' => $buyer->id,
+            'status' => 'reserved',
+            'stripe_session_id' => 'cs_test_webhook_001',
+            'expires_at' => now()->addMinutes(30),
+        ]);
+
         $secret = 'whsec_test_secret';
         config(['services.stripe.webhook_secret' => $secret]);
 
@@ -129,6 +138,7 @@ class StripeWebhookTest extends TestCase
                         'item_id' => (string) $item->id,
                         'user_id' => (string) $buyer->id,
                         'address_id' => (string) $address->id,
+                        'reservation_id' => (string) $reservation->id,
                     ],
                 ],
             ],
@@ -195,6 +205,14 @@ class StripeWebhookTest extends TestCase
             'user_id' => $buyer->id,
         ]);
 
+        $reservation = CheckoutReservation::create([
+            'item_id' => $item->id,
+            'user_id' => $buyer->id,
+            'status' => 'reserved',
+            'stripe_session_id' => 'cs_test_webhook_duplicate_001',
+            'expires_at' => now()->addMinutes(30),
+        ]);
+
         $secret = 'whsec_test_secret';
         config(['services.stripe.webhook_secret' => $secret]);
 
@@ -215,6 +233,7 @@ class StripeWebhookTest extends TestCase
                         'item_id' => (string) $item->id,
                         'user_id' => (string) $buyer->id,
                         'address_id' => (string) $address->id,
+                        'reservation_id' => (string) $reservation->id,
                     ],
                 ],
             ],

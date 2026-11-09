@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Item;
 use App\Models\User;
 use App\Models\Address;
+use App\Models\CheckoutReservation;
 use App\Services\PurchaseService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Stripe\Checkout\Session;
@@ -43,7 +44,16 @@ class PurchaseServiceFeatureTest extends TestCase
             'user_id' => $buyer->id,
         ]);
 
+        $reservation = CheckoutReservation::create([
+            'item_id' => $item->id,
+            'user_id' => $buyer->id,
+            'status' => 'reserved',
+            'stripe_session_id' => 'cs_test_purchase_existing',
+            'expires_at' => now()->addMinutes(30),
+        ]);
+
         $session = $this->createStripeSession([
+            'id' => 'cs_test_purchase_existing',
             'payment_status' => 'paid',
             'mode' => 'payment',
             'currency' => 'jpy',
@@ -52,6 +62,7 @@ class PurchaseServiceFeatureTest extends TestCase
                 'item_id' => (string) $item->id,
                 'user_id' => (string) $buyer->id,
                 'address_id' => (string) $address->id,
+                'reservation_id' => (string) $reservation->id,
             ],
         ]);
 
@@ -77,6 +88,14 @@ class PurchaseServiceFeatureTest extends TestCase
             'user_id' => $buyer->id,
         ]);
 
+        $reservation = CheckoutReservation::create([
+            'item_id' => $item->id,
+            'user_id' => $buyer->id,
+            'status' => 'reserved',
+            'stripe_session_id' => 'cs_test_purchase_001',
+            'expires_at' => now()->addMinutes(30),
+        ]);
+
         $session = $this->createStripeSession([
             'id' => 'cs_test_purchase_001',
             'payment_status' => 'paid',
@@ -88,6 +107,7 @@ class PurchaseServiceFeatureTest extends TestCase
                 'item_id' => (string) $item->id,
                 'user_id' => (string) $buyer->id,
                 'address_id' => (string) $address->id,
+                'reservation_id' => (string) $reservation->id,
             ],
         ]);
 
@@ -105,6 +125,11 @@ class PurchaseServiceFeatureTest extends TestCase
         ]);
 
         $this->assertTrue($item->fresh()->is_sold);
+
+        $this->assertDatabaseHas('checkout_reservations', [
+            'id' => $reservation->id,
+            'status' => 'completed',
+        ]);
     }
 
     public function test_決済金額が商品価格と異なる場合は例外が発生する(): void
@@ -379,6 +404,14 @@ class PurchaseServiceFeatureTest extends TestCase
             'user_id' => $buyer->id,
         ]);
 
+        $reservation = CheckoutReservation::create([
+            'item_id' => $item->id,
+            'user_id' => $buyer->id,
+            'status' => 'reserved',
+            'stripe_session_id' => 'cs_test_duplicate_001',
+            'expires_at' => now()->addMinutes(30),
+        ]);
+
         $session = $this->createStripeSession([
             'id' => 'cs_test_duplicate_001',
             'payment_status' => 'paid',
@@ -390,6 +423,7 @@ class PurchaseServiceFeatureTest extends TestCase
                 'item_id' => (string) $item->id,
                 'user_id' => (string) $buyer->id,
                 'address_id' => (string) $address->id,
+                'reservation_id' => (string) $reservation->id,
             ],
         ]);
 

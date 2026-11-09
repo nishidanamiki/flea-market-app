@@ -6,6 +6,7 @@ use App\Models\Item;
 use App\Models\User;
 use App\Models\Address;
 use App\Models\Purchase;
+use App\Models\CheckoutReservation;
 use Illuminate\Support\Facades\DB;
 use Stripe\Checkout\Session;
 
@@ -96,6 +97,10 @@ class PurchaseService
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            $reservation = CheckoutReservation::where('item_id', $itemId)
+                ->lockForUpdate()
+                ->first();
+
             // Stripeから同じ決済通知が再送された場合に備える
             $existingPurchase = Purchase::where(
                 'stripe_session_id',
@@ -120,6 +125,29 @@ class PurchaseService
                 throw new \RuntimeException('この商品はすでに売り切れです');
             }
 
+            if (
+                $reservation === null ||
+                (int) $reservation->item_id !== $itemId ||
+                (int) $reservation->user_id !== $userId
+            ) {
+                throw new \RuntimeException('予約情報と購入情報が一致しません');
+            }
+
+            if ($reservation->stripe_session_id !== $stripeSession->id) {
+                throw new \RuntimeException('StripeセッションIDが予約情報と一致しません');
+            }
+
+            if (
+                empty($stripeSession->metadata->reservation_id) ||
+                (string) $reservation->id !== (string) $stripeSession->metadata->reservation_id
+            ) {
+                throw new \RuntimeException('予約IDが決済情報と一致しません');
+            }
+
+            if ($reservation->status !== 'reserved') {
+                throw new \RuntimeException('予約の状態が正しくありません');
+            }
+
             // 商品の価格が変更されていないか、ロック取得後に再確認する
             if ($stripeSession->amount_total !== (int) $lockedItem->price) {
                 throw new \RuntimeException('決済金額が商品価格と一致しません');
@@ -141,6 +169,10 @@ class PurchaseService
 
             $lockedItem->update([
                 'is_sold' => true,
+            ]);
+
+            $reservation->update([
+                'status' => 'completed',
             ]);
         });
     }
