@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\PurchaseService;
+use App\Models\CheckoutReservation;
 use Illuminate\Http\Request;
 use Stripe\Webhook;
 use Stripe\Exception\SignatureVerificationException;
@@ -50,6 +51,17 @@ class StripeWebhookController extends Controller
                     ], 500);
                 }
             }
+        }
+
+        if ($event->type === 'checkout.session.expired') {
+            $stripeSession = $event->data->object;
+
+        CheckoutReservation::where(
+            'stripe_session_id',
+            $stripeSession->id
+        )
+            ->where('status', 'reserved')
+            ->update(['status' => 'expired']);
         }
 
         return response()->json(['received' => true]);

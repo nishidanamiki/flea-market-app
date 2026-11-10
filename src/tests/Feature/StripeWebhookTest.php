@@ -340,4 +340,177 @@ class StripeWebhookTest extends TestCase
 
         $this->assertTrue($item->fresh()->is_sold);
     }
+
+    public function test_セッション期限切れWebhookで仮予約が期限切れになる(): void
+    {
+        $item = Item::factory()->create();
+        $buyer = User::factory()->create();
+
+        $reservation = CheckoutReservation::create([
+            'item_id' => $item->id,
+            'user_id' => $buyer->id,
+            'status' => 'reserved',
+            'stripe_session_id' => 'cs_test_expired_001',
+            'expires_at' => now()->addMinutes(30),
+        ]);
+
+        $secret = 'whsec_test_secret';
+        config(['services.stripe.webhook_secret' => $secret]);
+
+        $payload = json_encode([
+            'id' => 'evt_test_expired_001',
+            'object' => 'event',
+            'type' => 'checkout.session.expired',
+            'data' => [
+                'object' => [
+                    'id' => 'cs_test_expired_001',
+                    'object' => 'checkout.session',
+                    'status' => 'expired',
+                ],
+            ],
+        ]);
+
+        $timestamp = time();
+
+        $signature = hash_hmac(
+            'sha256',
+            $timestamp . '.' . $payload,
+            $secret
+        );
+
+        $signatureHeader = "t={$timestamp},v1={$signature}";
+
+        $this->call(
+            'POST',
+            '/stripe/webhook',
+            [],
+            [],
+            [],
+            ['HTTP_Stripe_Signature' => $signatureHeader],
+            $payload
+        )->assertStatus(200);
+
+        $this->assertDatabaseHas('checkout_reservations', [
+            'id' => $reservation->id,
+            'status' => 'expired',
+        ]);
+
+        $this->assertFalse($item->fresh()->is_sold);
+    }
+
+    public function test_購入済み予約は期限切れWebhookで変更されない(): void
+    {
+        $item = Item::factory()->create([
+            'is_sold' => true,
+        ]);
+
+        $buyer = User::factory()->create();
+
+        $reservation = CheckoutReservation::create([
+            'item_id' => $item->id,
+            'user_id' => $buyer->id,
+            'status' => 'completed',
+            'stripe_session_id' => 'cs_test_completed_001',
+            'expires_at' => now()->subMinutes(30),
+        ]);
+
+        $secret = 'whsec_test_secret';
+        config(['services.stripe.webhook_secret' => $secret]);
+
+        $payload = json_encode([
+            'id' => 'evt_test_expired_completed_001',
+            'object' => 'event',
+            'type' => 'checkout.session.expired',
+            'data' => [
+                'object' => [
+                    'id' => 'cs_test_completed_001',
+                    'object' => 'checkout.session',
+                    'status' => 'expired',
+                ],
+            ],
+        ]);
+
+        $timestamp = time();
+
+        $signature = hash_hmac(
+            'sha256',
+            $timestamp . '.' . $payload,
+            $secret
+        );
+
+        $signatureHeader = "t={$timestamp},v1={$signature}";
+
+        $this->call(
+            'POST',
+            '/stripe/webhook',
+            [],
+            [],
+            [],
+            ['HTTP_Stripe_Signature' => $signatureHeader],
+            $payload
+        )->assertStatus(200);
+
+        $this->assertDatabaseHas('checkout_reservations', [
+            'id' => $reservation->id,
+            'status' => 'completed',
+        ]);
+
+        $this->assertTrue($item->fresh()->is_sold);
+    }
+
+    public function test_古い期限切れWebhookは新しい予約を変更しない(): void
+    {
+        $item = Item::factory()->create();
+        $buyer = User::factory()->create();
+
+        $reservation = CheckoutReservation::create([
+            'item_id' => $item->id,
+            'user_id' => $buyer->id,
+            'status' => 'reserved',
+            'stripe_session_id' => 'cs_test_new_session',
+            'expires_at' => now()->addMinutes(30),
+        ]);
+
+        $secret = 'whsec_test_secret';
+        config(['services.stripe.webhook_secret'  => $secret]);
+
+        $payload = json_encode([
+            'id' => 'evt_test_old_expired',
+            'object' => 'event',
+            'type' => 'checkout.session.expired',
+            'data' => [
+                'object' => [
+                    'id' => 'cs_test_old_session',
+                    'object' => 'checkout.session',
+                    'status' => 'expired',
+                ],
+            ],
+        ]);
+
+        $timestamp = time();
+
+        $signature = hash_hmac(
+            'sha256',
+            $timestamp . '.' . $payload,
+            $secret
+        );
+
+        $signatureHeader = "t={$timestamp},v1={$signature}";
+
+        $this->call(
+            'POST',
+            '/stripe/webhook',
+            [],
+            [],
+            [],
+            ['HTTP_Stripe_Signature' => $signatureHeader],
+            $payload
+        )->assertStatus(200);
+
+        $this->assertDatabaseHas('checkout_reservations', [
+            'id' => $reservation->id,
+            'status' => 'reserved',
+            'stripe_session_id' => 'cs_test_new_session',
+        ]);
+    }
 }

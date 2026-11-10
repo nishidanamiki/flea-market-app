@@ -39,7 +39,14 @@ class CheckoutReservationService
             }
 
             if ($reservation !== null && $reservation->status === 'expired') {
-                throw new \RuntimeException('期限切れ予約の再利用はまだできません');
+                $reservation->update([
+                    'user_id' => $userId,
+                    'status' => 'initializing',
+                    'stripe_session_id' => null,
+                    'expires_at' => null,
+                ]);
+
+                return $reservation->refresh();
             }
 
             if ($reservation === null) {

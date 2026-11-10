@@ -149,7 +149,7 @@ class CheckoutReservationServiceTest extends TestCase
         $service->reserve($item->id, $buyerB->id);
     }
 
-    public function test_期限切れの予約はまだ再利用できない(): void
+    public function test_期限切れの予約は再利用できる(): void
     {
         $seller = User::factory()->create();
         $buyerA = User::factory()->create();
@@ -160,18 +160,28 @@ class CheckoutReservationServiceTest extends TestCase
             'is_sold' => false,
         ]);
 
-        CheckoutReservation::create([
+        $reservation = CheckoutReservation::create([
             'item_id' => $item->id,
             'user_id' => $buyerA->id,
             'status' => 'expired',
+            'expires_at' => now()->subMinutes(30),
         ]);
 
         $service = new CheckoutReservationService();
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('期限切れ予約の再利用はまだできません');
+        $newReservation = $service->reserve($item->id, $buyerB->id);
 
-        $service->reserve($item->id, $buyerB->id);
+        $this->assertEquals($reservation->id, $newReservation->id);
+
+        $this->assertDatabaseHas('checkout_reservations', [
+            'id' => $reservation->id,
+            'user_id' => $buyerB->id,
+            'status' => 'initializing',
+            'stripe_session_id' => null,
+            'expires_at' => null,
+        ]);
+
+        $this->assertDatabaseCount('checkout_reservations', 1);
     }
 
     public function test_Stripeセッション登録後に予約状態が更新される(): void
@@ -205,7 +215,7 @@ class CheckoutReservationServiceTest extends TestCase
         $this->assertNotNull($reservation->fresh()->expires_at);
     }
 
-    public function test_期限きれのStripeセッションでは予約を更新できない(): void
+    public function test_期限切れのStripeセッションでは予約を更新できない(): void
     {
         $seller = User::factory()->create();
         $buyer = User::factory()->create();

@@ -61,13 +61,17 @@ class ItemIndexTest extends TestCase
         $user = User::factory()->create();
         $this->actingAs($user);
 
-        $liked = Item::factory()->create();
+        $liked = Item::factory()->create([
+            'name' => 'いいねした商品A'
+        ]);
         Like::factory()->create([
             'user_id' => $user->id,
             'item_id' => $liked->id,
         ]);
 
-        $other = Item::factory()->create();
+        $other = Item::factory()->create([
+            'name' => 'いいねしていない商品B',
+        ]);
 
         $response = $this->get('/?tab=mylist');
 

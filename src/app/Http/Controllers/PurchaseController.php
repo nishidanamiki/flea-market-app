@@ -13,8 +13,6 @@ use Illuminate\Support\Facades\Auth;
 use Stripe\Stripe;
 use Stripe\Checkout\Session;
 use Illuminate\Http\Request;
-use PhpParser\Node\Stmt\Return_;
-use Stripe\ApiOperations\Retrieve;
 
 class PurchaseController extends Controller
 {
@@ -100,14 +98,14 @@ class PurchaseController extends Controller
 
         $reservationService = new CheckoutReservationService();
 
-        $reservation = $reservationService->reserve(
-            (int) $item->id,
-            (int) auth()->id()
-        );
-
-        Stripe::setApiKey(config('services.stripe.secret'));
-
         try {
+            $reservation = $reservationService->reserve(
+                (int) $item->id,
+                (int) auth()->id()
+            );
+
+            Stripe::setApiKey(config('services.stripe.secret'));
+
             $session = Session::create([
                 'payment_method_types' => ['card'],
                 'line_items' => [
