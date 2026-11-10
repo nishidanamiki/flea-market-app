@@ -12,6 +12,9 @@ class CheckoutReservation extends Model
         'status',
         'expires_at',
         'stripe_session_id',
+        'attempt_key',
+        'address_id',
+        'payment_method',
     ];
 
     protected function casts(): array

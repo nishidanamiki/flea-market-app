@@ -5,14 +5,15 @@ namespace App\Services;
 use App\Models\Item;
 use App\Models\CheckoutReservation;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Stripe\Checkout\Session;
 use Carbon\Carbon;
 
 class CheckoutReservationService
 {
-    public function reserve(int $itemId, int $userId): CheckoutReservation
+    public function reserve(int $itemId, int $userId, ?int $addressId = null, ?string $paymentMethod = null): CheckoutReservation
     {
-        return DB::transaction(function () use ($itemId, $userId) {
+        return DB::transaction(function () use ($itemId, $userId, $addressId, $paymentMethod) {
             $item = Item::whereKey($itemId)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -44,6 +45,9 @@ class CheckoutReservationService
                     'status' => 'initializing',
                     'stripe_session_id' => null,
                     'expires_at' => null,
+                    'attempt_key' => (string) Str::uuid(),
+                    'address_id' => $addressId,
+                    'payment_method' => $paymentMethod,
                 ]);
 
                 return $reservation->refresh();
@@ -54,6 +58,9 @@ class CheckoutReservationService
                     'item_id' => $itemId,
                     'user_id' => $userId,
                     'status' => 'initializing',
+                    'attempt_key' => (string) Str::uuid(),
+                    'address_id' => $addressId,
+                    'payment_method' => $paymentMethod,
                 ]);
             }
 

@@ -43,6 +43,7 @@ class CheckoutReservationServiceTest extends TestCase
         ]);
 
         $this->assertEquals($item->id, $reservation->item_id);
+        $this->assertNotNull($reservation->attempt_key);
     }
 
     public function test_売却済みの商品は予約できない(): void
@@ -165,11 +166,17 @@ class CheckoutReservationServiceTest extends TestCase
             'user_id' => $buyerA->id,
             'status' => 'expired',
             'expires_at' => now()->subMinutes(30),
+            'attempt_key' => '11111111-1111-4111-8111-111111111111',
         ]);
+
+        $oldAttemptKey = $reservation->attempt_key;
 
         $service = new CheckoutReservationService();
 
         $newReservation = $service->reserve($item->id, $buyerB->id);
+
+        $this->assertNotNull($newReservation->attempt_key);
+        $this->assertNotEquals($oldAttemptKey, $newReservation->attempt_key);
 
         $this->assertEquals($reservation->id, $newReservation->id);
 
@@ -284,5 +291,58 @@ class CheckoutReservationServiceTest extends TestCase
         $this->expectExceptionMessage('予約の状態が正しくありません');
 
         $service->markAsReserved($reservation->id, $session);
+    }
+
+    public function test_同じ購入者でも処理中の予約は新規予約できない(): void
+    {
+        $seller = User::factory()->create();
+        $buyer = User::factory()->create();
+
+        $item = Item::factory()->create([
+            'user_id' => $seller->id,
+            'is_sold' => false,
+        ]);
+
+        $service = new CheckoutReservationService();
+
+        $reservation = $service->reserve($item->id, $buyer->id);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('この商品は現在予約中です');
+
+        $service->reserve($item->id, $buyer->id);
+    }
+
+    public function test_仮予約に配送先と支払い方法が保存される(): void
+    {
+        $seller = User::factory()->create();
+        $buyer = User::factory()->create();
+
+        $item = Item::factory()->create([
+            'user_id' => $seller->id,
+            'is_sold' => false,
+        ]);
+
+        $address = \App\Models\Address::factory()->create([
+            'user_id' => $buyer->id,
+        ]);
+
+        $service = new CheckoutReservationService();
+
+        $reservation = $service->reserve(
+            $item->id,
+            $buyer->id,
+            $address->id,
+            'card'
+        );
+
+        $this->assertDatabaseHas('checkout_reservations', [
+            'id' => $reservation->id,
+            'item_id' => $item->id,
+            'user_id' => $buyer->id,
+            'address_id' => $address->id,
+            'payment_method' => 'card',
+            'status' => 'initializing',
+        ]);
     }
 }

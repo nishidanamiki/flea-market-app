@@ -101,7 +101,9 @@ class PurchaseController extends Controller
         try {
             $reservation = $reservationService->reserve(
                 (int) $item->id,
-                (int) auth()->id()
+                (int) auth()->id(),
+                (int) $validated['address_id'],
+                $validated['payment']
             );
 
             Stripe::setApiKey(config('services.stripe.secret'));
@@ -132,7 +134,7 @@ class PurchaseController extends Controller
                     . '?session_id={CHECKOUT_SESSION_ID}',
                 'cancel_url' => route('purchase.cancel', ['item_id' => $item->id]),
             ], [
-                'idempotency_key' => 'checkout_reservation_' . $reservation->id,
+                'idempotency_key' => 'checkout_attempt_' . $reservation->attempt_key,
             ]);
 
             $reservationService->markAsReserved($reservation->id, $session);
