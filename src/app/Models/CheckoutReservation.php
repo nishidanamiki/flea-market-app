@@ -15,6 +15,8 @@ class CheckoutReservation extends Model
         'attempt_key',
         'address_id',
         'payment_method',
+        'item_name',
+        'amount',
     ];
 
     protected function casts(): array

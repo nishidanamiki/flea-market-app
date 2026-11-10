@@ -114,9 +114,9 @@ class PurchaseController extends Controller
                     [
                         'price_data' => [
                             'currency' => 'jpy',
-                            'unit_amount' => $item->price,
+                            'unit_amount' => $reservation->amount,
                             'product_data' => [
-                                'name' => $item->name,
+                                'name' => $reservation->item_name,
                             ],
                         ],
                         'quantity' => 1,

@@ -28,10 +28,27 @@ class CheckoutReservationService
 
             $reservation = CheckoutReservation::where('item_id', $itemId)->first();
 
-            if (
-                $reservation !== null &&
-                in_array($reservation->status, ['initializing', 'reserved'], true)
-            ) {
+            if ($reservation !== null && $reservation->status === 'initializing') {
+                $canRetry =
+                    (int) $reservation->user_id === $userId &&
+                    $addressId !== null &&
+                    (int) $reservation->address_id === $addressId &&
+                    $paymentMethod === 'card' &&
+                    $reservation->payment_method === $paymentMethod &&
+                    $reservation->item_name === $item->name &&
+                    (int) $reservation->amount === (int) $item->price &&
+                    !empty($reservation->attempt_key) &&
+                    $reservation->updated_at !== null &&
+                    $reservation->updated_at->gt(now()->subHours(23));
+
+                if ($canRetry) {
+                    return $reservation;
+                }
+
+                throw new \RuntimeException('この商品は現在予約中です');
+            }
+
+            if ($reservation !== null && $reservation->status === 'reserved') {
                 throw new \RuntimeException('この商品は現在予約中です');
             }
 
@@ -48,6 +65,8 @@ class CheckoutReservationService
                     'attempt_key' => (string) Str::uuid(),
                     'address_id' => $addressId,
                     'payment_method' => $paymentMethod,
+                    'item_name' => $item->name,
+                    'amount' => $item->price,
                 ]);
 
                 return $reservation->refresh();
@@ -61,6 +80,8 @@ class CheckoutReservationService
                     'attempt_key' => (string) Str::uuid(),
                     'address_id' => $addressId,
                     'payment_method' => $paymentMethod,
+                    'item_name' => $item->name,
+                    'amount' => $item->price,
                 ]);
             }
 

@@ -91,6 +91,10 @@ class PurchaseServiceFeatureTest extends TestCase
         $reservation = CheckoutReservation::create([
             'item_id' => $item->id,
             'user_id' => $buyer->id,
+            'address_id' => $address->id,
+            'payment_method' => 'card',
+            'item_name' => $item->name,
+            'amount' => 3000,
             'status' => 'reserved',
             'stripe_session_id' => 'cs_test_purchase_001',
             'expires_at' => now()->addMinutes(30),

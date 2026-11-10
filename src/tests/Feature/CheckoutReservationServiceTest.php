@@ -321,6 +321,8 @@ class CheckoutReservationServiceTest extends TestCase
         $item = Item::factory()->create([
             'user_id' => $seller->id,
             'is_sold' => false,
+            'name'=> 'テスト用カメラ',
+            'price' => 3000,
         ]);
 
         $address = \App\Models\Address::factory()->create([
@@ -342,7 +344,45 @@ class CheckoutReservationServiceTest extends TestCase
             'user_id' => $buyer->id,
             'address_id' => $address->id,
             'payment_method' => 'card',
+            'item_name' => 'テスト用カメラ',
+            'amount' => 3000,
             'status' => 'initializing',
         ]);
+    }
+
+    public function test_同じ購入者が再試行すると既存の仮予約を再利用する(): void
+    {
+        $seller = User::factory()->create();
+        $buyer = User::factory()->create();
+
+        $item = Item::factory()->create([
+            'user_id' => $seller->id,
+            'price' => 3000,
+        ]);
+
+        $address = \App\Models\Address::factory()->create([
+            'user_id' => $buyer->id,
+        ]);
+
+        $service = new CheckoutReservationService();
+
+        $first = $service->reserve(
+            $item->id,
+            $buyer->id,
+            $address->id,
+            'card',
+        );
+
+        $second = $service->reserve(
+            $item->id,
+            $buyer->id,
+            $address->id,
+            'card',
+        );
+
+        $this->assertSame($first->id, $second->id);
+        $this->assertSame($first->attempt_key, $second->attempt_key);
+
+        $this->assertDatabaseCount('checkout_reservations', 1);
     }
 }
