@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Services\PurchaseService;
+use App\Services\StripePaymentMethodService;
 use PHPUnit\Framework\TestCase;
 use Stripe\Checkout\Session;
 
@@ -16,7 +17,8 @@ class PurchaseServiceTest extends TestCase
             'currency' => 'jpy',
         ]);
 
-        $service = new PurchaseService();
+        $paymentMethodService = $this->createStub(StripePAymentMethodService::class);
+        $service = new PurchaseService($paymentMethodService);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('決済が完了していません');
@@ -32,7 +34,8 @@ class PurchaseServiceTest extends TestCase
             'currency' => 'jpy',
         ]);
 
-        $service = new PurchaseService();
+        $paymentMethodService = $this->createStub(StripePAymentMethodService::class);
+        $service = new PurchaseService($paymentMethodService);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('決済モードが正しくありません');
@@ -48,7 +51,8 @@ class PurchaseServiceTest extends TestCase
             'currency' => 'usd',
         ]);
 
-        $service = new PurchaseService();
+        $paymentMethodService = $this->createStub(StripePAymentMethodService::class);
+        $service = new PurchaseService($paymentMethodService);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('決済通貨が正しくありません');
@@ -67,7 +71,8 @@ class PurchaseServiceTest extends TestCase
             'metadata' => [],
         ]);
 
-        $service = new PurchaseService();
+        $paymentMethodService = $this->createStub(StripePAymentMethodService::class);
+        $service = new PurchaseService($paymentMethodService);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('商品IDが設定されていません');
@@ -88,7 +93,8 @@ class PurchaseServiceTest extends TestCase
             ],
         ]);
 
-        $service = new PurchaseService();
+        $paymentMethodService = $this->createStub(StripePAymentMethodService::class);
+        $service = new PurchaseService($paymentMethodService);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('商品IDの形式が正しくありません');

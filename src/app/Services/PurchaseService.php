@@ -12,6 +12,10 @@ use Stripe\Checkout\Session;
 
 class PurchaseService
 {
+    public function __construct(
+        private StripePaymentMethodService $paymentMethodService
+    ) {
+    }
     public function completePaidCheckout(Session $stripeSession): void
     {
         if ($stripeSession->payment_status !== 'paid') {
@@ -90,8 +94,12 @@ class PurchaseService
             throw new \RuntimeException('配送先住所が購入者のものではありません');
         }
 
+        $actualPaymentMethod = $this->paymentMethodService->getType(
+            $stripeSession->payment_intent
+        );
+
         // 購入履歴の登録と商品の売却状態の更新をまとめて実行する
-        DB::transaction(function () use ($itemId, $userId, $addressId, $stripeSession) {
+        DB::transaction(function () use ($itemId, $userId, $addressId, $stripeSession, $actualPaymentMethod) {
             // 同じ商品の購入確定処理が並行して進まないようにロックする
             $lockedItem = Item::whereKey($itemId)
                 ->lockForUpdate()
@@ -148,6 +156,29 @@ class PurchaseService
                 throw new \RuntimeException('予約の状態が正しくありません');
             }
 
+            if (!in_array($reservation->payment_method, ['card', 'konbini'], true)) {
+                throw new \RuntimeException('支払い方法が正しくありません');
+            }
+
+            if (
+                $stripeSession->payment_method_types !== [
+                    $reservation->payment_method
+                ]
+            ) {
+                throw new \RuntimeException('Stripeの支払い方法が予約情報と一致しません');
+            }
+
+            if ($actualPaymentMethod !== $reservation->payment_method) {
+                throw new \RuntimeException('実際の支払方法が予約情報と一致しません');
+            }
+
+            if (
+                $reservation->address_id === null ||
+                (int) $reservation->address_id !== $addressId
+            ) {
+                throw new \RuntimeException('予約の配送先が一致しません');
+            }
+
             // 商品の価格が変更されていないか、ロック取得後に再確認する
             if ($stripeSession->amount_total !== (int) $lockedItem->price) {
                 throw new \RuntimeException('決済金額が商品価格と一致しません');
@@ -161,7 +192,7 @@ class PurchaseService
                 'user_id' => $userId,
                 'item_id' => $lockedItem->id,
                 'address_id' => $addressId,
-                'payment_method' => 'card',
+                'payment_method' => $reservation->payment_method,
                 'status' => 'paid',
                 'stripe_session_id' => $stripeSession->id,
                 'stripe_payment_intent_id' => $stripeSession->payment_intent,

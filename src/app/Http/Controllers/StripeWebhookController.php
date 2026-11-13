@@ -35,17 +35,19 @@ class StripeWebhookController extends Controller
             return response()->json(['error' => '署名検証失敗'], 400);
         }
 
-        if ($event->type === 'checkout.session.completed') {
+        if (in_array($event->type, [
+            'checkout.session.completed',
+            'checkout.session.async_payment_succeeded',
+        ], true)) {
             $stripeSession = $event->data->object;
 
             if ($stripeSession->payment_status === 'paid') {
                 try {
-                    $purchaseService = new PurchaseService();
+                    $purchaseService = app(PurchaseService::class);
                     $purchaseService->completePaidCheckout($stripeSession);
                 } catch (\Throwable $e) {
                     report($e);
 
-                    // 購入確定に失敗した場合は成功を返さず、Stripeの再送対象にする
                     return response()->json([
                         'error' => '購入確定処理に失敗しました',
                     ], 500);
@@ -53,15 +55,27 @@ class StripeWebhookController extends Controller
             }
         }
 
+        if ($event->type === 'checkout.session.async_payment_failed') {
+            $stripeSession = $event->data->object;
+
+            CheckoutReservation::where(
+                'stripe_session_id',
+                $stripeSession->id
+            )
+                ->where('payment_method', 'konbini')
+                ->where('status', 'reserved')
+                ->update(['status' => 'expired']);
+        }
+
         if ($event->type === 'checkout.session.expired') {
             $stripeSession = $event->data->object;
 
-        CheckoutReservation::where(
-            'stripe_session_id',
-            $stripeSession->id
-        )
-            ->where('status', 'reserved')
-            ->update(['status' => 'expired']);
+            CheckoutReservation::where(
+                'stripe_session_id',
+                $stripeSession->id
+            )
+                ->where('status', 'reserved')
+                ->update(['status' => 'expired']);
         }
 
         return response()->json(['received' => true]);

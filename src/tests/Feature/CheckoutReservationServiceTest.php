@@ -212,6 +212,9 @@ class CheckoutReservationServiceTest extends TestCase
         ]);
 
         $service->markAsReserved($reservation->id, $session);
+        
+        // 同じStripeセッションを再登録してもエラーにならないことを確認する
+        $service->markAsReserved($reservation->id, $session);
 
         $this->assertDatabaseHas('checkout_reservations', [
             'id' => $reservation->id,

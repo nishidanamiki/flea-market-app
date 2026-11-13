@@ -33,7 +33,7 @@ class CheckoutReservationService
                     (int) $reservation->user_id === $userId &&
                     $addressId !== null &&
                     (int) $reservation->address_id === $addressId &&
-                    $paymentMethod === 'card' &&
+                    in_array($paymentMethod, ['card', 'konbini'], true) &&
                     $reservation->payment_method === $paymentMethod &&
                     $reservation->item_name === $item->name &&
                     (int) $reservation->amount === (int) $item->price &&
@@ -89,6 +89,26 @@ class CheckoutReservationService
         });
     }
 
+    public function findActiveSessionId(int $itemId, int $userId, int $addressId, string $paymentMethod): ?string
+    {
+        $reservation = CheckoutReservation::where('item_id', $itemId)->first();
+
+        if (
+            $reservation === null ||
+            $reservation->status !== 'reserved' ||
+            (int) $reservation->user_id !== $userId ||
+            (int) $reservation->address_id !== $addressId ||
+            $reservation->payment_method !== $paymentMethod ||
+            empty($reservation->stripe_session_id) ||
+            $reservation->expires_at === null ||
+            $reservation->expires_at->isPast()
+        ) {
+            return null;
+        }
+
+        return $reservation->stripe_session_id;
+    }
+
     public function markAsReserved(int $reservationId, Session $session): void
     {
         DB::transaction(function () use ($reservationId, $session) {
@@ -96,11 +116,22 @@ class CheckoutReservationService
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            if (empty($session->id)) {
+                throw new \RuntimeException('Stripeセッションの情報が正しくありません');
+            }
+
+            if (
+                $reservation->status === 'reserved' &&
+                $reservation->stripe_session_id === $session->id
+            ) {
+                return;
+            }
+
             if ($reservation->status !== 'initializing') {
                 throw new \RuntimeException('予約の状態が正しくありません');
             }
 
-            if ($session->status !== 'open' || empty($session->id) || empty($session->expires_at)) {
+            if ($session->status !== 'open' || empty($session->expires_at)) {
                 throw new \RuntimeException('Stripeセッションの情報が正しくありません');
             }
 

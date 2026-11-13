@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Address;
 use App\Models\CheckoutReservation;
 use App\Services\PurchaseService;
+use App\Services\StripePaymentMethodService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Stripe\Checkout\Session;
 use Tests\TestCase;
@@ -14,6 +15,15 @@ use Tests\TestCase;
 class PurchaseServiceFeatureTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->mock(StripePaymentMethodService::class)
+            ->shouldReceive('getType')
+            ->andReturn('card');
+    }
 
     public function test_商品が存在しない場合は例外が発生する(): void
     {
@@ -26,7 +36,7 @@ class PurchaseServiceFeatureTest extends TestCase
             ],
         ]);
 
-        $service = new PurchaseService();
+        $service = app(PurchaseService::class);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('商品が見つかりません');
@@ -47,6 +57,8 @@ class PurchaseServiceFeatureTest extends TestCase
         $reservation = CheckoutReservation::create([
             'item_id' => $item->id,
             'user_id' => $buyer->id,
+            'address_id' => $address->id,
+            'payment_method' => 'card',
             'status' => 'reserved',
             'stripe_session_id' => 'cs_test_purchase_existing',
             'expires_at' => now()->addMinutes(30),
@@ -66,7 +78,7 @@ class PurchaseServiceFeatureTest extends TestCase
             ],
         ]);
 
-        $service = new PurchaseService();
+        $service = app(PurchaseService::class);
 
         $service->completePaidCheckout($session);
 
@@ -115,7 +127,7 @@ class PurchaseServiceFeatureTest extends TestCase
             ],
         ]);
 
-        $service = new PurchaseService();
+        $service = app(PurchaseService::class);
         $service->completePaidCheckout($session);
 
         $this->assertDatabaseHas('purchases', [
@@ -152,7 +164,7 @@ class PurchaseServiceFeatureTest extends TestCase
             ],
         ]);
 
-        $service = new PurchaseService();
+        $service = app(PurchaseService::class);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('決済金額が商品価格と一致しません');
@@ -176,7 +188,7 @@ class PurchaseServiceFeatureTest extends TestCase
             ],
         ]);
 
-        $service = new PurchaseService();
+        $service = app(PurchaseService::class);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('購入者IDが設定されていません');
@@ -201,7 +213,7 @@ class PurchaseServiceFeatureTest extends TestCase
             ],
         ]);
 
-        $service = new PurchaseService();
+        $service = app(PurchaseService::class);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('購入者IDの形式が正しくありません');
@@ -226,7 +238,7 @@ class PurchaseServiceFeatureTest extends TestCase
             ],
         ]);
 
-        $service = new PurchaseService();
+        $service = app(PurchaseService::class);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('購入者が見つかりません');
@@ -251,7 +263,7 @@ class PurchaseServiceFeatureTest extends TestCase
             ],
         ]);
 
-        $service = new PurchaseService();
+        $service = app(PurchaseService::class);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('自分の商品は購入できません');
@@ -279,7 +291,7 @@ class PurchaseServiceFeatureTest extends TestCase
             ],
         ]);
 
-        $service = new PurchaseService();
+        $service = app(PurchaseService::class);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('配送先住所IDが設定されていません');
@@ -307,7 +319,7 @@ class PurchaseServiceFeatureTest extends TestCase
             ],
         ]);
 
-        $service = new PurchaseService();
+        $service = app(PurchaseService::class);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('配送先住所IDの形式が正しくありません');
@@ -335,7 +347,7 @@ class PurchaseServiceFeatureTest extends TestCase
             ],
         ]);
 
-        $service = new PurchaseService();
+        $service = app(PurchaseService::class);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('配送先住所が見つかりません');
@@ -369,7 +381,7 @@ class PurchaseServiceFeatureTest extends TestCase
             ],
         ]);
 
-        $service = new PurchaseService();
+        $service = app(PurchaseService::class);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('配送先住所が購入者のものではありません');
@@ -388,7 +400,7 @@ class PurchaseServiceFeatureTest extends TestCase
             ],
         ]);
 
-        $service = new PurchaseService();
+        $service = app(PurchaseService::class);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('商品IDの形式が正しくありません');
@@ -411,6 +423,8 @@ class PurchaseServiceFeatureTest extends TestCase
         $reservation = CheckoutReservation::create([
             'item_id' => $item->id,
             'user_id' => $buyer->id,
+            'address_id' => $address->id,
+            'payment_method' => 'card',
             'status' => 'reserved',
             'stripe_session_id' => 'cs_test_duplicate_001',
             'expires_at' => now()->addMinutes(30),
@@ -431,7 +445,7 @@ class PurchaseServiceFeatureTest extends TestCase
             ],
         ]);
 
-        $service = new PurchaseService();
+        $service = app(PurchaseService::class);
 
         $service->completePaidCheckout($session);
         $service->completePaidCheckout($session);
@@ -446,6 +460,7 @@ class PurchaseServiceFeatureTest extends TestCase
         return Session::constructFrom(array_merge([
             'id' => 'cs_test_default_001',
             'payment_intent' => 'pi_test_default_001',
+            'payment_method_types' => ['card'],
         ], $attributes));
     }
 }

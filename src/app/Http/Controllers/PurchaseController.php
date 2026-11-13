@@ -7,9 +7,11 @@ use App\Http\Requests\PurchaseRequest;
 use App\Models\Item;
 use App\Models\Address;
 use App\Models\Purchase;
+use App\Models\CheckoutReservation;
 use App\Services\PurchaseService;
 use App\Services\CheckoutReservationService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Stripe\Stripe;
 use Stripe\Checkout\Session;
 use Illuminate\Http\Request;
@@ -92,13 +94,53 @@ class PurchaseController extends Controller
             ->addresses()
             ->findOrFail($validated['address_id']);
 
-        if ($validated['payment'] === 'konbini') {
-            abort(403, 'コンビニ決済は現在利用できません');
-        }
-
         $reservationService = new CheckoutReservationService();
 
+        // 同じ商品の決済準備が同時に進まないようにする
+        $lock = Cache::lock('checkout_item_' . $item->id, 120);
+
+        if (!$lock->get()) {
+            return redirect()
+                ->route('items.index')
+                ->with('error', 'この商品は現在購入処理中です。しばらくしてからお試しください');
+        }
+
         try {
+            $sessionId = $reservationService->findActiveSessionId(
+                (int) $item->id,
+                (int) auth()->id(),
+                (int) $validated['address_id'],
+                $validated['payment']
+            );
+
+            if ($sessionId !== null) {
+                Stripe::setApiKey(config('services.stripe.secret'));
+
+                $existingSession = Session::retrieve($sessionId);
+
+                $reservation = CheckoutReservation::where('item_id', $item->id)
+                    ->where('stripe_session_id', $sessionId)
+                    ->first();
+
+                if (
+                    $reservation !== null &&
+                    (string) ($existingSession->metadata->reservation_id ?? '') === (string) $reservation->id &&
+                    $existingSession->status === 'open' &&
+                    (int) ($existingSession->expires_at ?? 0) > now()->timestamp &&
+                    !empty($existingSession->url) &&
+                    $existingSession->mode === 'payment' &&
+                    $existingSession->currency === 'jpy' &&
+                    (int) $existingSession->amount_total === (int) $item->price &&
+                    (string) ($existingSession->metadata->item_id ?? '') === (string) $item->id &&
+                    (string) ($existingSession->metadata->user_id ?? '') === (string) auth()->id() &&
+                    (string) ($existingSession->metadata->address_id ?? '') === (string) $validated['address_id']
+                ) {
+                    return redirect()->away($existingSession->url);
+                }
+
+                throw new \RuntimeException('既存の決済セッションを再利用できません');
+            }
+
             $reservation = $reservationService->reserve(
                 (int) $item->id,
                 (int) auth()->id(),
@@ -109,7 +151,18 @@ class PurchaseController extends Controller
             Stripe::setApiKey(config('services.stripe.secret'));
 
             $session = Session::create([
-                'payment_method_types' => ['card'],
+                'payment_method_types' => [$reservation->payment_method],
+
+                ...($reservation->payment_method === 'konbini'
+                    ? [
+                        'payment_method_options' => [
+                            'konbini' => [
+                                'expires_after_days' => 3,
+                            ],
+                        ],
+                    ]
+                    : []),
+
                 'line_items' => [
                     [
                         'price_data' => [
@@ -123,6 +176,7 @@ class PurchaseController extends Controller
                     ]
                 ],
                 'mode' => 'payment',
+                'customer_email' => auth()->user()->email,
 
                 'metadata' => [
                     'item_id' => $item->id,
@@ -146,6 +200,8 @@ class PurchaseController extends Controller
             return redirect()
                 ->route('items.index')
                 ->with('error', '決済の準備に失敗しました。しばらくしてからご確認ください');
+        } finally {
+            $lock->release();
         }
     }
 
@@ -171,12 +227,6 @@ class PurchaseController extends Controller
                 ->with('error', '決済情報を確認できませんでした');
         }
 
-        if ($stripeSession->payment_status !== 'paid') {
-            return redirect()
-                ->route('items.index')
-                ->with('error', '決済が完了していません');
-        }
-
         if (
             $stripeSession->mode !== 'payment' ||
             $stripeSession->currency !== 'jpy' ||
@@ -200,9 +250,40 @@ class PurchaseController extends Controller
             abort(403, '配送先住所を確認できません');
         }
 
+        $reservation = CheckoutReservation::where('stripe_session_id', $stripeSession->id)
+            ->where('item_id', $item->id)
+            ->where('user_id', auth()->id())
+            ->where('address_id', $address_id)
+            ->first();
+
+        if (
+            $reservation === null ||
+            (string) ($stripeSession->metadata->reservation_id ?? '') !== (string) $reservation->id
+        ) {
+            abort(403, '予約情報が決済情報と一致しません');
+        }
+
+        if (
+            $reservation->payment_method === 'konbini' &&
+            $reservation->status === 'reserved' &&
+            $stripeSession->status === 'complete' &&
+            $stripeSession->payment_status === 'unpaid'
+        ) {
+            return view('purchase.success', [
+                'item' => $item,
+                'status' => 'pending',
+            ]);
+        }
+
+        if ($stripeSession->payment_status !== 'paid') {
+            return redirect()
+                ->route('items.index')
+                ->with('error', '決済が完了していません');
+        }
+
         // 購入確定処理をPurchaseServiceに任せる
         try {
-            $purchaseService = new PurchaseService();
+            $purchaseService = app(PurchaseService::class);
 
             $purchaseService->completePaidCheckout($stripeSession);
         } catch (\RuntimeException $e) {

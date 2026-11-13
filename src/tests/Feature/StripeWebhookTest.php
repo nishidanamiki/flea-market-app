@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Address;
 use App\Models\CheckoutReservation;
 use App\Http\Controllers\StripeWebhookController;
+use App\Services\StripePaymentMethodService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Tests\TestCase;
@@ -14,6 +15,19 @@ use Tests\TestCase;
 class StripeWebhookTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->mock(StripePaymentMethodService::class)
+            ->shouldReceive('getType')
+            ->andReturnUsing(function (string $paymentIntentId) {
+                return $paymentIntentId === 'pi_test_konbini_success'
+                    ? 'konbini'
+                    : 'card';
+            });
+    }
 
     public function test_秘密鍵が未設定なら503を返す(): void
     {
@@ -113,6 +127,8 @@ class StripeWebhookTest extends TestCase
         $reservation = CheckoutReservation::create([
             'item_id' => $item->id,
             'user_id' => $buyer->id,
+            'address_id' => $address->id,
+            'payment_method' => 'card',
             'status' => 'reserved',
             'stripe_session_id' => 'cs_test_webhook_001',
             'expires_at' => now()->addMinutes(30),
@@ -131,6 +147,7 @@ class StripeWebhookTest extends TestCase
                     'object' => 'checkout.session',
                     'payment_status' => 'paid',
                     'payment_intent' => 'pi_test_webhook_001',
+                    'payment_method_types' => ['card'],
                     'mode' => 'payment',
                     'currency' => 'jpy',
                     'amount_total' => 3000,
@@ -208,6 +225,8 @@ class StripeWebhookTest extends TestCase
         $reservation = CheckoutReservation::create([
             'item_id' => $item->id,
             'user_id' => $buyer->id,
+            'address_id' => $address->id,
+            'payment_method' => 'card',
             'status' => 'reserved',
             'stripe_session_id' => 'cs_test_webhook_duplicate_001',
             'expires_at' => now()->addMinutes(30),
@@ -226,6 +245,7 @@ class StripeWebhookTest extends TestCase
                     'object' => 'checkout.session',
                     'payment_status' => 'paid',
                     'payment_intent' => 'pi_test_webhook_duplicate_001',
+                    'payment_method_types' => ['card'],
                     'mode' => 'payment',
                     'currency' => 'jpy',
                     'amount_total' => 3000,
@@ -512,5 +532,205 @@ class StripeWebhookTest extends TestCase
             'status' => 'reserved',
             'stripe_session_id' => 'cs_test_new_session',
         ]);
+    }
+    public function test_コンビニ決済の入金失敗で仮予約が解除される(): void
+    {
+        $item = Item::factory()->create();
+        $buyer = User::factory()->create();
+
+        $reservation = CheckoutReservation::create([
+            'item_id' => $item->id,
+            'user_id' => $buyer->id,
+            'payment_method' => 'konbini',
+            'status' => 'reserved',
+            'stripe_session_id' => 'cs_test_konbini_failed',
+        ]);
+
+        $secret = 'whsec_test_secret';
+        config(['services.stripe.webhook_secret' => $secret]);
+
+        $payload = json_encode([
+            'id' => 'evt_test_konbini_failed',
+            'object' => 'event',
+            'type' => 'checkout.session.async_payment_failed',
+            'data' => [
+                'object' => [
+                    'id' => 'cs_test_konbini_failed',
+                    'object' => 'checkout.session',
+                ],
+            ],
+        ]);
+
+        $timestamp = time();
+        $signature = hash_hmac(
+            'sha256',
+            $timestamp . '.' . $payload,
+            $secret
+        );
+
+        $response = $this->call(
+            'POST',
+            '/stripe/webhook',
+            [],
+            [],
+            [],
+            ['HTTP_Stripe_Signature' => "t={$timestamp},v1={$signature}"],
+            $payload
+        );
+
+        $response->assertStatus(200);
+
+        $this->assertDatabaseHas('checkout_reservations', [
+            'id' => $reservation->id,
+            'status' => 'expired',
+        ]);
+
+        $this->assertFalse($item->fresh()->is_sold);
+    }
+
+    public function test_コンビニ決済の入金待ちでは仮予約を維持する(): void
+    {
+        $item = Item::factory()->create([
+            'is_sold' => false,
+        ]);
+
+        $buyer = User::factory()->create();
+
+        $reservation = CheckoutReservation::create([
+            'item_id' => $item->id,
+            'user_id' => $buyer->id,
+            'payment_method' => 'konbini',
+            'status' => 'reserved',
+            'stripe_session_id' => 'cs_test_konbini_pending',
+        ]);
+
+        $secret = 'whsec_test_secret';
+        config(['services.stripe.webhook_secret' => $secret]);
+
+        $payload = json_encode([
+            'id' => 'evt_test_konbini_pending',
+            'object' => 'event',
+            'type' => 'checkout.session.completed',
+            'data' => [
+                'object' => [
+                    'id' => 'cs_test_konbini_pending',
+                    'object' => 'checkout.session',
+                    'payment_status' => 'unpaid',
+                ],
+            ],
+        ]);
+
+        $timestamp = time();
+
+        $signature = hash_hmac(
+            'sha256',
+            $timestamp . '.' . $payload,
+            $secret
+        );
+
+        $response = $this->call(
+            'POST',
+            '/stripe/webhook',
+            [],
+            [],
+            [],
+            ['HTTP_Stripe_Signature' => "t={$timestamp},v1={$signature}"],
+            $payload
+        );
+
+        $response->assertStatus(200);
+
+        $this->assertDatabaseHas('checkout_reservations', [
+            'id' => $reservation->id,
+            'status' => 'reserved',
+        ]);
+
+        $this->assertDatabaseCount('purchases', 0);
+        $this->assertFalse($item->fresh()->is_sold);
+    }
+
+    public function test_コンビニ決済の入金成功で購入が確定する(): void
+    {
+        $item = Item::factory()->create([
+            'price' => 3000,
+        ]);
+
+        $buyer = User::factory()->create();
+
+        $address = Address::factory()->create([
+            'user_id' => $buyer->id,
+        ]);
+
+        $reservation = CheckoutReservation::create([
+            'item_id' => $item->id,
+            'user_id' => $buyer->id,
+            'address_id' => $address->id,
+            'payment_method' => 'konbini',
+            'status' => 'reserved',
+            'stripe_session_id' => 'cs_test_konbini_success',
+            'expires_at' => now()->addDays(3),
+        ]);
+
+        $secret = 'whsec_test_secret';
+        config(['services.stripe.webhook_secret' => $secret]);
+
+        $payload = json_encode([
+            'id' => 'evt_test_konbini_success',
+            'object' => 'event',
+            'type' => 'checkout.session.async_payment_succeeded',
+            'data' => [
+                'object' => [
+                    'id' => 'cs_test_konbini_success',
+                    'object' => 'checkout.session',
+                    'payment_status' => 'paid',
+                    'payment_intent' => 'pi_test_konbini_success',
+                    'payment_method_types' => ['konbini'],
+                    'mode' => 'payment',
+                    'currency' => 'jpy',
+                    'amount_total' => 3000,
+                    'metadata' => [
+                        'item_id' => (string) $item->id,
+                        'user_id' => (string) $buyer->id,
+                        'address_id' => (string) $address->id,
+                        'reservation_id' => (string) $reservation->id,
+                    ],
+                ],
+            ],
+        ]);
+
+        $timestamp = time();
+
+        $signature = hash_hmac(
+            'sha256',
+            $timestamp . '.' . $payload,
+            $secret
+        );
+
+        $response = $this->call(
+            'POST',
+            '/stripe/webhook',
+            [],
+            [],
+            [],
+            ['HTTP_Stripe_Signature' => "t={$timestamp},v1={$signature}"],
+            $payload
+        );
+
+        $response->assertStatus(200);
+
+        $this->assertDatabaseHas('purchases', [
+            'user_id' => $buyer->id,
+            'item_id' => $item->id,
+            'payment_method' => 'konbini',
+            'status' => 'paid',
+            'stripe_session_id' => 'cs_test_konbini_success',
+        ]);
+
+        $this->assertDatabaseHas('checkout_reservations', [
+            'id' => $reservation->id,
+            'status' => 'completed',
+        ]);
+
+        $this->assertTrue($item->fresh()->is_sold);
     }
 }
